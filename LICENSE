@@ -1,0 +1,33 @@
+MIT License
+
+Copyright (c) 2026 Jaron Maasse
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+**Attribution Requirement:** Any use, modification, incorporation, or
+redistribution of the Software or any substantial portion thereof must credit
+the original author, Jaron Maasse, identify the system by its original name,
+and include a link to the original repository. This attribution must appear
+in the project's README, documentation, acknowledgements, or credits.
+
+**Video Game Exemption:** The attribution requirement above does not apply
+to released video games that are not open source. This exemption applies
+solely to the requirement to provide attribution and does not waive the
+requirement to include this copyright notice and license when distributing
+copies or substantial portions of the Software itself.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

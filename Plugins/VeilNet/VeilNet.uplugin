@@ -1,0 +1,16 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "VeilNet",
+	"Description": "Reusable server-authoritative visibility filtering and replicated shadow proxies.",
+	"Category": "Networking",
+	"CanContainContent": false,
+	"Modules": [
+		{
+			"Name": "VeilNetRuntime",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
