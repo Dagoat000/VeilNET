@@ -106,35 +106,39 @@ bool UVeilNetVisibilityComponent::HasTargetTag(
 
 bool UVeilNetVisibilityComponent::IsPointInView(
     const FVector& ViewLocation,
-    const FVector& ViewForward,
+    const FRotator& ViewRotation,
     const FVector& Point) const
 {
-    const FVector ToPoint =
-        Point - ViewLocation;
-
-    if (ToPoint.IsNearlyZero())
+    const FVector ViewLocalPoint =
+        ViewRotation.UnrotateVector(Point - ViewLocation);
+    if (ViewLocalPoint.IsNearlyZero())
     {
         return true;
     }
 
-    const FVector Direction =
-        ToPoint.GetSafeNormal();
+    if (ViewLocalPoint.X <= 0.0f)
+    {
+        return false;
+    }
 
-    const float HalfAngle =
-        FMath::Clamp(
-            HorizontalFOV * 0.5f +
-            FOVPaddingDegrees,
-            1.f,
-            179.f);
+    const float HorizontalAngle = FMath::RadiansToDegrees(
+        FMath::Atan2(ViewLocalPoint.Y, ViewLocalPoint.X));
+    const float VerticalAngle = FMath::RadiansToDegrees(
+        FMath::Atan2(
+            ViewLocalPoint.Z,
+            FVector2D(ViewLocalPoint.X, ViewLocalPoint.Y).Size()));
 
-    const float MinDot =
-        FMath::Cos(
-            FMath::DegreesToRadians(
-                HalfAngle));
+    const float HorizontalHalfFOV = FMath::Clamp(
+        HorizontalFOV * 0.5f + FOVPaddingDegrees,
+        1.0f,
+        179.0f);
+    const float VerticalHalfFOV = FMath::Clamp(
+        VerticalFOV * 0.5f + FOVPaddingDegrees,
+        1.0f,
+        89.0f);
 
-    return FVector::DotProduct(
-        ViewForward.GetSafeNormal(),
-        Direction) >= MinDot;
+    return FMath::Abs(HorizontalAngle) <= HorizontalHalfFOV
+        && FMath::Abs(VerticalAngle) <= VerticalHalfFOV;
 }
 
 bool UVeilNetVisibilityComponent::IsPointVisible(
@@ -239,9 +243,6 @@ bool UVeilNetVisibilityComponent::CanSeeTarget(
         return false;
     }
 
-    const FVector Forward =
-        ViewRotation.Vector();
-
     FCollisionQueryParams QueryParams(
         SCENE_QUERY_STAT(TagFogOfWar),
         true);
@@ -261,7 +262,7 @@ bool UVeilNetVisibilityComponent::CanSeeTarget(
             FVector::DistSquared(ViewLocation, Point);
 
         if (DistanceSquared <= MaxVisionRadiusSquared
-            && IsPointInView(ViewLocation, Forward, Point))
+            && IsPointInView(ViewLocation, ViewRotation, Point))
         {
             CandidateSamples.Add({ Point, DistanceSquared });
         }
@@ -273,7 +274,7 @@ bool UVeilNetVisibilityComponent::CanSeeTarget(
         const float DistanceSquared =
             FVector::DistSquared(ViewLocation, Point);
         if (DistanceSquared <= MaxVisionRadiusSquared
-            && IsPointInView(ViewLocation, Forward, Point))
+            && IsPointInView(ViewLocation, ViewRotation, Point))
         {
             CandidateSamples.Add({ Point, DistanceSquared });
         }
@@ -355,6 +356,45 @@ bool UVeilNetVisibilityComponent::IsActorVisibleForReplication(
 
     return World->GetTimeSeconds() - *LastSeen
         <= VisibilityGracePeriod;
+}
+
+bool UVeilNetVisibilityComponent::IsActorVisibleForViewer(
+    const AActor* Target,
+    const AActor* RealViewer,
+    const AActor* ViewTarget)
+{
+    if (!IsValid(Target))
+    {
+        return false;
+    }
+
+    if (ViewTarget == Target)
+    {
+        return true;
+    }
+
+    const APawn* ViewerPawn = Cast<APawn>(ViewTarget);
+    if (!ViewerPawn)
+    {
+        if (const APlayerController* PlayerController =
+            Cast<APlayerController>(RealViewer))
+        {
+            ViewerPawn = PlayerController->GetPawn();
+        }
+    }
+
+    if (ViewerPawn == Target)
+    {
+        return true;
+    }
+
+    const UVeilNetVisibilityComponent* Visibility =
+        ViewerPawn
+            ? ViewerPawn->FindComponentByClass<UVeilNetVisibilityComponent>()
+            : nullptr;
+
+    return Visibility
+        && Visibility->IsActorVisibleForReplication(Target);
 }
 
 void UVeilNetVisibilityComponent::UpdateFogOfWar()

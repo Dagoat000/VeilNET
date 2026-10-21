@@ -20,6 +20,11 @@ public:
     UFUNCTION(BlueprintCallable, Category="VeilNet")
     bool IsActorVisibleForReplication(const AActor* Target) const;
 
+    static bool IsActorVisibleForViewer(
+        const AActor* Target,
+        const AActor* RealViewer,
+        const AActor* ViewTarget);
+
     UPROPERTY(EditAnywhere, Category="VeilNet|Targets")
     TArray<FName> TargetTags;
 
@@ -59,12 +64,16 @@ private:
     float HorizontalFOV = 90.0f;
 
     UPROPERTY(EditAnywhere, Category="VeilNet|Vision",
+        meta=(ClampMin="1.0", ClampMax="179.0"))
+    float VerticalFOV = 70.0f;
+
+    UPROPERTY(EditAnywhere, Category="VeilNet|Vision",
         meta=(ClampMin="0.0", ClampMax="45.0"))
     float FOVPaddingDegrees = 5.0f;
 
     UPROPERTY(EditAnywhere, Category="VeilNet|Vision",
         meta=(ClampMin="0.0", ClampMax="2.0"))
-    float VisibilityGracePeriod = 0.08f;
+    float VisibilityGracePeriod = 0.033f;
 
     UPROPERTY(EditAnywhere, Category="VeilNet|Debug")
     bool bDebugDraw = false;
@@ -78,7 +87,7 @@ private:
 
     bool IsPointInView(
         const FVector& ViewLocation,
-        const FVector& ViewForward,
+        const FRotator& ViewRotation,
         const FVector& Point) const;
 
     bool IsPointVisible(

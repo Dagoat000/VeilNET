@@ -5,14 +5,12 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "GameFramework/GameStateBase.h"
-#include "GameFramework/Pawn.h"
-#include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "VeilNetVisibilityComponent.h"
 
 namespace
 {
-    constexpr float ShadowPoseUpdateInterval = 1.0f / 60.0f;
+    constexpr float ShadowPoseUpdateInterval = 1.0f / 30.0f;
     constexpr float MaxShadowPoseExtrapolationSeconds = 0.05f;
     constexpr float MaxShadowPosePredictionIntervals = 2.0f;
 }
@@ -37,8 +35,8 @@ AVeilNetShadowProxy::AVeilNetShadowProxy()
     ShadowPoseMesh->SetCastHiddenShadow(true);
     ShadowPoseMesh->SetHiddenInGame(true);
 
-    SetNetUpdateFrequency(60.0f);
-    SetMinNetUpdateFrequency(60.0f);
+    SetNetUpdateFrequency(30.0f);
+    SetMinNetUpdateFrequency(30.0f);
     NetPriority = 3.0f;
 }
 
@@ -54,33 +52,10 @@ bool AVeilNetShadowProxy::IsNetRelevantFor(
         return false;
     }
 
-    if (ViewTarget == Source)
-    {
-        return true;
-    }
-
-    const APawn* ViewerPawn = Cast<APawn>(ViewTarget);
-    if (!ViewerPawn)
-    {
-        if (const APlayerController* PlayerController =
-            Cast<APlayerController>(RealViewer))
-        {
-            ViewerPawn = PlayerController->GetPawn();
-        }
-    }
-
-    if (ViewerPawn == Source)
-    {
-        return true;
-    }
-
-    const UVeilNetVisibilityComponent* Visibility =
-        ViewerPawn
-            ? ViewerPawn->FindComponentByClass<UVeilNetVisibilityComponent>()
-            : nullptr;
-
-    return Visibility
-        && Visibility->IsActorVisibleForReplication(Source);
+    return UVeilNetVisibilityComponent::IsActorVisibleForViewer(
+        Source,
+        RealViewer,
+        ViewTarget);
 }
 
 bool AVeilNetShadowProxy::InitializeFromSource(

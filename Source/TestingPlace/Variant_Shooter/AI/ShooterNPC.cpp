@@ -22,6 +22,11 @@ void AShooterNPC::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	// spawn the weapon
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
@@ -41,6 +46,11 @@ void AShooterNPC::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 float AShooterNPC::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	if (!HasAuthority())
+	{
+		return 0.0f;
+	}
+
 	// ignore if already dead
 	if (bIsDead)
 	{

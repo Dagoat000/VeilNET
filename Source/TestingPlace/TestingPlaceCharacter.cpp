@@ -8,7 +8,6 @@
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/PlayerController.h"
 #include "VeilNetVisibilityComponent.h"
 #include "TestingPlace.h"
 #include "VeilNetShadowProxyComponent.h"
@@ -64,33 +63,10 @@ bool ATestingPlaceCharacter::IsNetRelevantFor(
 		return false;
 	}
 
-	if (ViewTarget == this)
-	{
-		return true;
-	}
-
-	const APawn* ViewerPawn = Cast<APawn>(ViewTarget);
-	if (!ViewerPawn)
-	{
-		if (const APlayerController* PlayerController =
-			Cast<APlayerController>(RealViewer))
-		{
-			ViewerPawn = PlayerController->GetPawn();
-		}
-	}
-
-	if (ViewerPawn == this)
-	{
-		return true;
-	}
-
-	const UVeilNetVisibilityComponent* FogOfWar =
-		ViewerPawn
-			? ViewerPawn->FindComponentByClass<UVeilNetVisibilityComponent>()
-			: nullptr;
-
-	return FogOfWar
-		&& FogOfWar->IsActorVisibleForReplication(this);
+	return UVeilNetVisibilityComponent::IsActorVisibleForViewer(
+		this,
+		RealViewer,
+		ViewTarget);
 }
 
 void ATestingPlaceCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
