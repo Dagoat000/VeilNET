@@ -104,15 +104,15 @@ The plugin has been compiled for Win64 with Unreal Engine 5.8, and the integrati
 
 ## Next steps
 
-These are useful follow-up tasks for strengthening the project's resistance to ESP and keeping the integration reliable:
+Track follow-up work here. Check an item when its implementation and verification are complete:
 
-1. **Audit all client-visible information.** Make an inventory of replicated actors, components, replicated references, RPCs, gameplay events, audio, projectiles, and UI feedback that could reveal a hidden target. Add viewer-specific filtering or remove unnecessary data from each path.
-2. **Cover every relevant actor class.** Add the visibility policy to every actor carrying sensitive state, not just characters. Check child actors, attached actors, owned actors, and any Replication Graph or Iris rules that may bypass normal relevancy.
-3. **Tune the visibility grace period.** It reduces flicker but intentionally allows a short period of continued relevancy after sight is lost. Test peek-and-hide cases and choose the shortest value that behaves acceptably for your game.
-4. **Minimize replicated data.** Keep hidden-target state server-only where possible. When clients need a cue, replicate only the minimum information permitted for that viewer, and avoid exact location or movement details if they are not needed.
-5. **Review indirect gameplay clues.** Test footsteps, weapon sounds, projectile paths, damage indicators, AI reactions, and objective updates from the perspective of a client who cannot see the target.
-6. **Keep gameplay decisions server-authoritative.** Validate movement, hits, damage, and interactions on the server; never trust a client-reported visibility result as proof that an action is allowed.
-7. **Make verification repeatable.** Keep the multiplayer checklist above as a regression test for each supported actor type and network configuration. Consider automating dedicated-server/client PIE scenarios and running the Win64 plugin build in CI.
+- [ ] **Audit all client-visible information.** Inventory replicated actors, components, replicated references, RPCs, gameplay events, audio, projectiles, and UI feedback that could reveal a hidden target. Add viewer-specific filtering or remove unnecessary data from each path.
+- [ ] **Cover every relevant actor class.** Apply the visibility policy to every actor carrying sensitive state, not just characters. Check child actors, attached actors, owned actors, and Replication Graph or Iris rules that may bypass normal relevancy.
+- [ ] **Tune the visibility grace period.** Test peek-and-hide cases and choose the shortest value that behaves acceptably; the grace period reduces flicker but allows continued relevancy after sight is lost.
+- [ ] **Minimize replicated data.** Keep hidden-target state server-only where possible. When clients need a cue, replicate only the minimum information permitted for that viewer, avoiding exact location or movement data unless necessary.
+- [ ] **Review indirect gameplay clues.** Test footsteps, weapon sounds, projectile paths, damage indicators, AI reactions, and objective updates from the perspective of a client who cannot see the target.
+- [ ] **Keep gameplay decisions server-authoritative.** Validate movement, hits, damage, and interactions on the server. Never trust a client-reported visibility result as proof that an action is allowed.
+- [ ] **Make verification repeatable.** Use the multiplayer checklist above as a regression test for each supported actor type and network configuration. Consider automating dedicated-server/client PIE scenarios and running the Win64 plugin build in CI.
 
 Replication relevancy reduces what a client is sent; it cannot erase information the client already received or guarantee protection against every side channel. Treat each new replicated feature as part of the information-flow audit.
 
