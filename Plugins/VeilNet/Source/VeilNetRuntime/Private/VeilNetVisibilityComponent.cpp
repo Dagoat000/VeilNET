@@ -12,6 +12,7 @@
 #include "GameFramework/PlayerController.h"
 #include "ReferenceSkeleton.h"
 #include "TimerManager.h"
+#include "VeilNetRuntime.h"
 
 namespace
 {
@@ -61,6 +62,7 @@ void UVeilNetVisibilityComponent::EndPlay(
     }
 
     LastVisibleTimes.Empty();
+    LastLoggedVisibility.Empty();
 
     Super::EndPlay(EndPlayReason);
 }
@@ -447,6 +449,22 @@ void UVeilNetVisibilityComponent::UpdateFogOfWar()
         );
 
         const TWeakObjectPtr<AActor> Key(Target);
+        const bool* PreviousVisibility = LastLoggedVisibility.Find(Key);
+        if (bLogVisibilityTransitions
+            && PreviousVisibility
+            && *PreviousVisibility != bVisible)
+        {
+            UE_LOG(
+                LogVeilNet,
+                Log,
+                TEXT("Visibility %s: observer=%s target=%s"),
+                bVisible
+                    ? TEXT("acquired")
+                    : TEXT("lost"),
+                *GetNameSafe(Observer),
+                *GetNameSafe(Target));
+        }
+        LastLoggedVisibility.Add(Key, bVisible);
 
         if (bVisible)
         {
@@ -487,6 +505,14 @@ void UVeilNetVisibilityComponent::UpdateFogOfWar()
 
         if (!IsValid(Target)
             || Now - It.Value() > VisibilityGracePeriod + 5.0)
+        {
+            It.RemoveCurrent();
+        }
+    }
+
+    for (auto It = LastLoggedVisibility.CreateIterator(); It; ++It)
+    {
+        if (!It.Key().IsValid())
         {
             It.RemoveCurrent();
         }

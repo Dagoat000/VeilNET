@@ -11,7 +11,10 @@ public class VeilNetRuntime : ModuleRules
 			"Core",
 			"CoreUObject",
 			"Engine",
-			"NetCore"
+			"NetCore",
+			"EasyHWIDRuntime",
+			"HTTP",
+			"Json"
 		});
 	}
 }

@@ -1,6 +1,6 @@
 # VeilNet
 
-**A work-in-progress Unreal Engine plugin for server-authoritative visibility and replicated shadow proxies.**
+**A work-in-progress Unreal Engine plugin for server-authoritative visibility filtering and replicated shadow proxies, with an optional device-ban service.**
 
 VeilNet packages reusable visibility sampling and shadow-proxy replication as a runtime plugin. The remaining `Source/TestingPlace` code is an example integration, not a requirement of the plugin. It needs multiplayer testing and feedback from other developers.
 
@@ -20,7 +20,7 @@ If you are unsure where to start, open an issue to discuss an idea before doing 
 
 The original TestingPlace snapshot was built with Unreal Engine 5.8 for the `TestingPlaceEditor Win64 Development` target. The extracted plugin now builds for Win64 with Unreal Engine 5.8's `BuildPlugin` workflow; multiplayer runtime behavior has not yet been validated.
 
-1. Copy `Plugins/VeilNet` into your project's `Plugins` directory and enable VeilNet in the Unreal Editor or the `.uproject` file.
+1. Copy both `Plugins/VeilNet` and `Plugins/EasyHWID` into your project's `Plugins` directory and enable VeilNet in the Unreal Editor or the `.uproject` file. VeilNet declares EasyHWID as a plugin dependency.
 2. Add `VeilNetRuntime` to the module dependencies in your project's `Build.cs`.
 3. Add `UVeilNetVisibilityComponent` to each player-controlled observer pawn. It samples visibility on the server. Configure `TargetTags` to include actors it should reveal; player-controlled pawns can also be included as targets with `bIncludePlayerControlledPawns`. With no target tags, only player-controlled pawns are considered by default. `RequiredTargetTag` can add an extra tag requirement. Configure `HorizontalFOV` and `VerticalFOV` to match the observer camera; both view angles are checked independently rather than treating horizontal FOV as a 3D cone.
 4. On each actor whose network relevancy should depend on visibility, override `IsNetRelevantFor` and use the shared per-viewer policy:
@@ -48,6 +48,102 @@ The original TestingPlace snapshot was built with Unreal Engine 5.8 for the `Tes
 7. Test with two-player networked PIE, including visibility, occluded shadows, animation, respawn, and movement.
 
 If desired, merge the `IpNetDriver` section from `Config/DefaultEngine.ini.fragment` into your project's `Config/DefaultEngine.ini`; do not replace the destination config with the fragment. `Source/TestingPlace` is not required to use the plugin.
+
+## Anti-wallhack visibility filtering
+
+The anti-wallhack control runs in the Unreal game server, not the optional
+.NET service. `UVeilNetVisibilityComponent` computes visibility on the server
+using the observer's server-side view, field of view, range, and collision
+traces. Use `IsNetRelevantFor` on every actor class carrying hidden-target
+state to keep that state from being replicated to viewers who cannot see it.
+The included character and shadow-proxy integrations show this pattern. The
+visibility component by itself does not change replication relevancy.
+
+For each observer, configure `TargetTags` to cover every actor type whose
+position or state must be hidden. Ensure level geometry blocks the configured
+visibility trace channel. Audit child and owned actors, replicated references,
+RPCs, projectiles, audio, and UI for alternate leaks; a wallhack can use any
+position or state already sent to the client. Do not use a client-reported
+visibility result to authorize gameplay actions—validate hits and interactions
+on the game server.
+
+This is prevention by limiting replicated information, not detection of a
+wallhack program. The device fingerprint service below is a separate,
+spoofable moderation aid and cannot detect cheats or replace server-authoritative
+gameplay validation. See the [multiplayer verification checklist](#multiplayer-verification-checklist).
+
+For server-side visibility auditing, `UVeilNetVisibilityComponent` has
+`bLogVisibilityTransitions` enabled by default. It logs an observer and target
+when a target becomes visible or is no longer visible. These records describe
+the server's visibility decision; they are not proof that a player used a
+wallhack. Keep normal log access controls and retention policies in place.
+
+The sample character also includes `UVeilNetMovementAuditComponent`. It checks
+server-observed horizontal/vertical speed and position displacement across
+movement modes, with separate limits for falling/jumping vertical movement.
+Repeated speed excesses and large position discontinuities are logged as
+anomalies, not proof of cheating. Call `ResetPositionBaseline` on the server
+after an authorized teleport or respawn. The component does not kick or ban
+players; tune its tolerances for legitimate game movement and abilities.
+Weapon fire and hit validation are not covered by this sample audit. To retain
+anomaly events in the optional moderator service, set `VEILNET_AUDIT_URL` on
+the dedicated game server to the service base URL. The component authenticates
+with the server-only `VEILNET_GAME_TOKEN`; events include a server player ID
+and movement measurements, not a name or hardware fingerprint. The admin
+page lists recent movement events for review, with retention controlled by
+`VEILNET_EVENT_RETENTION_DAYS` (30 days by default). Telemetry is limited to
+one event per character per second; use HTTPS when the service is remote.
+The player ID is session-scoped, not a persistent account identity.
+
+## Device-ban service and admin webpage
+
+The optional Device Moderation service and its admin webpage are in
+`Server`. Build and run the service with .NET 10:
+
+```powershell
+$env:VEILNET_GAME_TOKEN = "<unique game-server token>"
+$env:VEILNET_ADMIN_TOKEN = "<different moderator token>"
+$env:VEILNET_HASH_KEY = "<stable secret of at least 32 bytes>"
+dotnet run --project .\Server\VeilNet.Server.csproj
+```
+
+Open `http://127.0.0.1:5080/` in a browser for the moderation page. The page accepts
+the moderator token in-memory (it is not saved to local storage), lists
+fingerprints, and lets authorized staff ban/unban devices. The service listens
+on loopback by default. Use a trusted HTTPS reverse proxy for remote access;
+set `VEILNET_LISTEN_URL` and `VEILNET_DB_PATH` as needed. Full setup and API
+details are in `Server/README.md`. Never ship either token in a client build.
+The game-server-only `VEILNET_GAME_TOKEN` authorizes device checks; it does not
+authorize or implement wallhack visibility filtering.
+
+For game integration, add `UVeilNetAntiCheatComponent` to the owning
+`PlayerController` Blueprint/class, set its `ServiceBaseUrl`, and call
+`SubmitDeviceForValidation` only after disclosing the collection and obtaining
+any required consent. The game server reads `VEILNET_GAME_TOKEN` from its
+process environment. A successful check sets `bDeviceValidated` on the
+server; keep players out of gameplay until that flag is true. A banned device,
+unsupported fingerprint, missing configuration, or unavailable API returns
+the client to the main menu.
+
+The API lists observed fingerprints at
+`GET /api/v1/admin/devices?limit=50&offset=0`, bans via
+`POST /api/v1/admin/bans`, and unbans via
+`DELETE /api/v1/admin/bans/{fingerprint}`. All admin routes require
+`VEILNET_ADMIN_TOKEN`.
+
+EasyHWID derives a SHA-256 fingerprint from available SMBIOS system UUID and
+motherboard serial values on Windows; raw hardware values are not sent to the
+server. The server stores only a keyed HMAC of that fingerprint. This
+transparent, user-mode identifier is still spoofable/resettable and is not
+hardware attestation or a complete anti-cheat. Fingerprints remain sensitive
+data: use HTTPS, restrict moderator access, keep the HMAC key stable to
+preserve existing bans, and apply a retention policy. Do not rely on this
+check instead of server-authoritative gameplay validation.
+
+There is no general-purpose, unspoofable HWID available to a regular game
+client. Strong device attestation requires a trusted platform or anti-cheat
+provider, server-verifiable credentials, and appropriate user disclosure; it
+cannot be achieved by hashing more client-readable identifiers.
 
 ## Contributing
 

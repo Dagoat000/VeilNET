@@ -78,10 +78,14 @@ private:
     UPROPERTY(EditAnywhere, Category="VeilNet|Debug")
     bool bDebugDraw = false;
 
+    UPROPERTY(EditAnywhere, Category="VeilNet|Debug")
+    bool bLogVisibilityTransitions = true;
+
     FTimerHandle UpdateTimer;
 
     // Server time at which each target was last confirmed visible.
     TMap<TWeakObjectPtr<AActor>, double> LastVisibleTimes;
+    TMap<TWeakObjectPtr<AActor>, bool> LastLoggedVisibility;
 
     bool HasTargetTag(const AActor* Actor) const;
 

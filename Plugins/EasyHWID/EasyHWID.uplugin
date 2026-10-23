@@ -1,0 +1,16 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0.0",
+	"FriendlyName": "EasyHWID",
+	"Description": "Opt-in SMBIOS hardware fingerprint helper for server-side moderation.",
+	"Category": "Security",
+	"CanContainContent": false,
+	"Modules": [
+		{
+			"Name": "EasyHWIDRuntime",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}

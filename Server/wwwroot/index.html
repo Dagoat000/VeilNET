@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>VeilNet moderation and audit</title>
+	<style>
+		:root { color-scheme: dark; font: 15px/1.5 system-ui, sans-serif; background: #10151d; color: #e9eef6; }
+		body { margin: 0 auto; max-width: 1100px; padding: 2rem 1rem; }
+		h1 { margin-top: 0; }
+		.panel { background: #192330; border: 1px solid #2b3a4d; border-radius: 8px; margin: 1rem 0; padding: 1rem; }
+		label { display: block; margin: .5rem 0; }
+		input { background: #0e141c; border: 1px solid #43546a; border-radius: 4px; color: inherit; margin: .25rem .5rem .25rem 0; padding: .55rem; }
+		button { background: #264c78; border: 0; border-radius: 4px; color: white; cursor: pointer; margin: .2rem; padding: .55rem .8rem; }
+		button.danger { background: #8c3440; }
+		button:disabled { cursor: wait; opacity: .55; }
+		table { border-collapse: collapse; width: 100%; }
+		th, td { border-bottom: 1px solid #2b3a4d; padding: .7rem .5rem; text-align: left; vertical-align: top; }
+		code { overflow-wrap: anywhere; }
+		.status { min-height: 1.5em; }
+		.error { color: #ff9ba6; }
+		.muted { color: #a8b5c5; }
+		@media (max-width: 700px) { table { font-size: 13px; } th:nth-child(2), td:nth-child(2) { display: none; } }
+	</style>
+</head>
+<body>
+	<h1>VeilNet moderation and audit</h1>
+	<p class="muted">Device fingerprints are sensitive identifiers. Use this page only from a trusted HTTPS admin origin.</p>
+	<section class="panel">
+		<label for="adminToken">Moderator API token</label>
+		<input id="adminToken" type="password" autocomplete="off" placeholder="VEILNET_ADMIN_TOKEN">
+		<label for="search">Filter loaded devices</label>
+		<input id="search" type="search" placeholder="Search fingerprint or ban reason">
+		<label for="bannedBy">Moderator name</label>
+		<input id="bannedBy" maxlength="100" value="moderator">
+		<button id="loadButton">Load devices</button>
+		<button id="moreButton">Load more</button>
+		<div id="status" class="status" role="status" aria-live="polite"></div>
+	</section>
+	<section class="panel">
+		<table>
+			<thead>
+				<tr><th>Fingerprint</th><th>First seen</th><th>Last seen</th><th>Status / action</th></tr>
+			</thead>
+			<tbody id="devices"></tbody>
+		</table>
+	</section>
+	<section class="panel">
+		<h2>Recent movement audit events</h2>
+		<p class="muted">These server-reported anomalies are review signals, not proof of cheating.</p>
+		<button id="loadEventsButton">Load recent events</button>
+		<table>
+			<thead>
+				<tr><th>Received</th><th>Player ID</th><th>Event</th><th>Observed / allowed</th><th>Mode</th></tr>
+			</thead>
+			<tbody id="events"></tbody>
+		</table>
+	</section>
+	<script>
+		const tokenInput = document.querySelector("#adminToken");
+		const searchInput = document.querySelector("#search");
+		const statusBox = document.querySelector("#status");
+		const tableBody = document.querySelector("#devices");
+		const eventsBody = document.querySelector("#events");
+		const loadButton = document.querySelector("#loadButton");
+		const moreButton = document.querySelector("#moreButton");
+		const loadEventsButton = document.querySelector("#loadEventsButton");
+		const pageSize = 50;
+		let offset = 0;
+		let devices = [];
+
+		function setStatus(message, isError = false) {
+			statusBox.textContent = message;
+			statusBox.className = isError ? "status error" : "status";
+		}
+
+		async function api(path, options = {}) {
+			const token = tokenInput.value.trim();
+			if (!token) throw new Error("Enter the moderator API token.");
+			const response = await fetch(path, {
+				...options,
+				headers: {
+					"Authorization": `Bearer ${token}`,
+					"Content-Type": "application/json",
+					...options.headers
+				}
+			});
+			if (response.status === 204) return null;
+			const body = await response.json().catch(() => ({}));
+			if (!response.ok) throw new Error(body.error || `Request failed (${response.status}).`);
+			return body;
+		}
+
+		function render() {
+			const query = searchInput.value.trim().toLowerCase();
+			tableBody.replaceChildren();
+			for (const device of devices) {
+				if (query && !device.fingerprint.includes(query)
+					&& !(device.banReason || "").toLowerCase().includes(query)) continue;
+				const row = document.createElement("tr");
+				const idCell = document.createElement("td");
+				const code = document.createElement("code");
+				code.textContent = device.fingerprint;
+				idCell.append(code);
+				const firstCell = document.createElement("td");
+				firstCell.textContent = new Date(device.firstSeen).toLocaleString();
+				const lastCell = document.createElement("td");
+				lastCell.textContent = new Date(device.lastSeen).toLocaleString();
+				const actionCell = document.createElement("td");
+				const detail = document.createElement("div");
+				detail.textContent = device.banned
+					? `BANNED: ${device.banReason || "No reason"}`
+					: "Not banned";
+				actionCell.append(detail);
+				const action = document.createElement("button");
+				action.textContent = device.banned ? "Unban" : "Ban";
+				action.className = device.banned ? "" : "danger";
+				action.addEventListener("click", () => changeBan(device));
+				actionCell.append(action);
+				row.append(idCell, firstCell, lastCell, actionCell);
+				tableBody.append(row);
+			}
+		}
+
+		async function loadDevices(reset) {
+			loadButton.disabled = true;
+			moreButton.disabled = true;
+			try {
+				if (reset) {
+					offset = 0;
+					devices = [];
+				}
+				const page = await api(`/api/v1/admin/devices?limit=${pageSize}&offset=${offset}`);
+				devices.push(...page);
+				offset += page.length;
+				render();
+				setStatus(`Loaded ${devices.length} device(s).`);
+			} catch (error) {
+				setStatus(error.message, true);
+			} finally {
+				loadButton.disabled = false;
+				moreButton.disabled = false;
+			}
+		}
+
+		async function loadEvents() {
+			loadEventsButton.disabled = true;
+			try {
+				const events = await api("/api/v1/admin/events?limit=100&offset=0");
+				eventsBody.replaceChildren();
+				for (const event of events) {
+					const row = document.createElement("tr");
+					for (const value of [
+						new Date(event.receivedAt).toLocaleString(),
+						String(event.playerId),
+						event.kind,
+						`${Number(event.observed).toFixed(1)} / ${Number(event.allowed).toFixed(1)}`,
+						String(event.movementMode)
+					]) {
+						const cell = document.createElement("td");
+						cell.textContent = value;
+						row.append(cell);
+					}
+					eventsBody.append(row);
+				}
+				setStatus(`Loaded ${events.length} recent movement event(s).`);
+			} catch (error) {
+				setStatus(error.message, true);
+			} finally {
+				loadEventsButton.disabled = false;
+			}
+		}
+
+		async function changeBan(device) {
+			try {
+				if (device.banned) {
+					await api(`/api/v1/admin/bans/${device.fingerprint}`, { method: "DELETE" });
+					setStatus("Ban removed.");
+				} else {
+					const reason = window.prompt("Reason for this ban:");
+					if (!reason || !reason.trim()) return;
+					await api("/api/v1/admin/bans", {
+						method: "POST",
+						body: JSON.stringify({
+							fingerprint: device.fingerprint,
+							reason: reason.trim(),
+							bannedBy: document.querySelector("#bannedBy").value.trim(),
+							expiresAt: null
+						})
+					});
+					setStatus("Device banned.");
+				}
+				await loadDevices(true);
+			} catch (error) {
+				setStatus(error.message, true);
+			}
+		}
+
+		loadButton.addEventListener("click", () => loadDevices(true));
+		moreButton.addEventListener("click", () => loadDevices(false));
+		loadEventsButton.addEventListener("click", loadEvents);
+		searchInput.addEventListener("input", render);
+	</script>
+</body>
+</html>

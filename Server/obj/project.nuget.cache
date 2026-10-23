@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "TZMi7wbysHU=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\jbmaa\\Documents\\Unreal Projects\\FogOfWarShadow-Upload\\Server\\VeilNet.Server.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\jbmaa\\.nuget\\packages\\microsoft.data.sqlite\\10.0.0\\microsoft.data.sqlite.10.0.0.nupkg.sha512",
+    "C:\\Users\\jbmaa\\.nuget\\packages\\microsoft.data.sqlite.core\\10.0.0\\microsoft.data.sqlite.core.10.0.0.nupkg.sha512",
+    "C:\\Users\\jbmaa\\.nuget\\packages\\sqlitepclraw.bundle_e_sqlite3\\2.1.14\\sqlitepclraw.bundle_e_sqlite3.2.1.14.nupkg.sha512",
+    "C:\\Users\\jbmaa\\.nuget\\packages\\sqlitepclraw.core\\2.1.14\\sqlitepclraw.core.2.1.14.nupkg.sha512",
+    "C:\\Users\\jbmaa\\.nuget\\packages\\sqlitepclraw.lib.e_sqlite3\\2.1.14\\sqlitepclraw.lib.e_sqlite3.2.1.14.nupkg.sha512",
+    "C:\\Users\\jbmaa\\.nuget\\packages\\sqlitepclraw.provider.e_sqlite3\\2.1.14\\sqlitepclraw.provider.e_sqlite3.2.1.14.nupkg.sha512"
+  ],
+  "logs": []
+}

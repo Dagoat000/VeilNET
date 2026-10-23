@@ -3,9 +3,15 @@
 	"Version": 1,
 	"VersionName": "0.1.0",
 	"FriendlyName": "VeilNet",
-	"Description": "Reusable server-authoritative visibility filtering and replicated shadow proxies.",
+	"Description": "Server-authoritative visibility filtering, shadow proxies, and device ban checks.",
 	"Category": "Networking",
 	"CanContainContent": false,
+	"Plugins": [
+		{
+			"Name": "EasyHWID",
+			"Enabled": true
+		}
+	],
 	"Modules": [
 		{
 			"Name": "VeilNetRuntime",

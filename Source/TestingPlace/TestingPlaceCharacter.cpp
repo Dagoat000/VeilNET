@@ -10,6 +10,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "VeilNetVisibilityComponent.h"
 #include "TestingPlace.h"
+#include "VeilNetMovementAuditComponent.h"
 #include "VeilNetShadowProxyComponent.h"
 
 ATestingPlaceCharacter::ATestingPlaceCharacter()
@@ -22,6 +23,9 @@ ATestingPlaceCharacter::ATestingPlaceCharacter()
 	VisibilityComponent =
 		CreateDefaultSubobject<UVeilNetVisibilityComponent>(TEXT("VeilNet Visibility"));
 	VisibilityComponent->TargetTags.Add(FName(TEXT("Enemy")));
+	MovementAuditComponent =
+		CreateDefaultSubobject<UVeilNetMovementAuditComponent>(
+			TEXT("VeilNet Movement Audit"));
 
 	ShadowProxyComponent =
 		CreateDefaultSubobject<UVeilNetShadowProxyComponent>(TEXT("VeilNet Shadow Proxy"));

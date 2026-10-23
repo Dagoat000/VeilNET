@@ -12,6 +12,7 @@ class USkeletalMeshComponent;
 class UCameraComponent;
 class UInputAction;
 class UVeilNetVisibilityComponent;
+class UVeilNetMovementAuditComponent;
 class UVeilNetShadowProxyComponent;
 struct FInputActionValue;
 
@@ -36,6 +37,9 @@ class ATestingPlaceCharacter : public ACharacter
 	/** Server-authoritative visibility state used to filter character replication */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	UVeilNetVisibilityComponent* VisibilityComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UVeilNetMovementAuditComponent> MovementAuditComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UVeilNetShadowProxyComponent> ShadowProxyComponent;
