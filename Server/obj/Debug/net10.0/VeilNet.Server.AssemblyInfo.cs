@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VeilNet.Server")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d2693ced401b3ed445d7c727daccbc78675e35e6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ea4ed70aada422e82629ec953491b4834e0b4b55")]
 [assembly: System.Reflection.AssemblyProductAttribute("VeilNet.Server")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VeilNet.Server")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

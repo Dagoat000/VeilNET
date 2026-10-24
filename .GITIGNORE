@@ -1,0 +1,6 @@
+.vscode
+.ruff_cache
+Modules/Manager/.venv
+Modules/Manager/__pycache__
+Modules/Manager/build
+Modules/Manager/dist

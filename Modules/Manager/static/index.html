@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5f2">
+  <title>VeilNet Manager</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f4f1;
+      --panel: #ffffff;
+      --panel-raised: #f7f8f6;
+      --panel-hover: #eef1ed;
+      --line: #dfe4de;
+      --text: #202820;
+      --muted: #68736a;
+      --accent: #28734a;
+      --accent-ink: #ffffff;
+      --red: #b33e40;
+      --amber: #94620c;
+      --green: #28734a;
+      --blue: #376d9d;
+      --radius: 14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+    * { box-sizing: border-box; }
+    body { min-width: 320px; min-height: 100vh; margin: 0; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .shell { min-height: 100vh; }
+    .sidebar {
+      position: fixed; inset: 0 auto 0 0; z-index: 5; display: flex; width: 244px;
+      flex-direction: column; padding: 25px 16px 18px; border-right: 1px solid var(--line);
+      background: #111512;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 2px 10px 34px; }
+    .brand-mark {
+      display: grid; width: 36px; height: 36px; place-items: center; border-radius: 11px;
+      background: var(--accent); color: var(--accent-ink); font-size: 18px; font-weight: 900;
+    }
+    .brand-name { font-size: 15px; font-weight: 760; letter-spacing: .08em; }
+    .brand-sub { margin-top: 3px; color: var(--muted); font-size: 10px; letter-spacing: .16em; }
+    .nav-label { padding: 0 11px 10px; color: #657168; font-size: 10px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
+    .nav { display: grid; gap: 5px; }
+    .nav-button {
+      display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px;
+      border: 1px solid transparent; border-radius: 10px; background: transparent; color: #aeb8b0;
+      text-align: left; font-size: 13px; font-weight: 620; transition: .16s ease;
+    }
+    .nav-button:hover { background: var(--panel-raised); color: var(--text); }
+    .nav-button.active { border-color: #303d2b; background: #20291b; color: var(--accent); }
+    .nav-icon { width: 18px; color: currentColor; font-size: 16px; text-align: center; }
+    .sidebar-bottom { margin-top: auto; }
+    .connection-card { padding: 13px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .connection-title { margin-bottom: 10px; color: var(--muted); font-size: 11px; }
+    .connection-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; font-size: 11px; }
+    .connection-state { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #647068; }
+    .dot.ok { background: var(--green); box-shadow: 0 0 10px #77d69b66; }
+    .dot.bad { background: var(--red); }
+    .sidebar-foot { padding: 16px 10px 0; color: #647068; font-size: 10px; }
+    .main { min-height: 100vh; margin-left: 244px; }
+    .topbar {
+      position: sticky; top: 0; z-index: 4; display: flex; min-height: 76px; align-items: center;
+      justify-content: space-between; padding: 14px clamp(20px, 4vw, 52px);
+      border-bottom: 1px solid var(--line); background: #0d100feF; backdrop-filter: blur(18px);
+    }
+    .eyebrow { color: var(--accent); font-size: 10px; font-weight: 760; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 5px 0 0; font-size: 20px; letter-spacing: -.035em; }
+    .top-actions { display: flex; align-items: center; gap: 9px; }
+    .user-chip { display: flex; align-items: center; gap: 9px; margin-left: 8px; padding-left: 16px; border-left: 1px solid var(--line); }
+    .avatar { display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid #485344; border-radius: 50%; background: #293223; color: var(--accent); font-size: 12px; font-weight: 800; }
+    .user-label { color: #c7cec9; font-size: 11px; }
+    .content { width: min(1400px, 100%); margin: 0 auto; padding: 30px clamp(20px, 4vw, 52px) 56px; }
+    .welcome-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+    .welcome-row h2 { margin: 0; font-size: 23px; letter-spacing: -.04em; }
+    .welcome-row p { margin: 7px 0 0; color: var(--muted); font-size: 12px; }
+    .button {
+      display: inline-flex; min-height: 36px; align-items: center; justify-content: center; gap: 8px;
+      padding: 0 13px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel-raised);
+      color: var(--text); font-size: 11px; font-weight: 700; transition: .16s ease;
+    }
+    .button:hover { border-color: #53604f; background: var(--panel-hover); }
+    .button.primary { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+    .button.primary:hover { background: #c9f778; }
+    .button.danger { border-color: #553237; color: #ff9696; }
+    .button.danger:hover { border-color: #8e454b; background: #321c20; }
+    .button.subtle { border-color: transparent; background: transparent; color: var(--muted); }
+    .button.small { min-height: 29px; padding: 0 9px; font-size: 10px; }
+    .button:disabled { cursor: not-allowed; opacity: .45; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin-bottom: 25px; }
+    .metric { position: relative; overflow: hidden; min-height: 112px; padding: 17px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .metric::after { position: absolute; top: -30px; right: -22px; width: 100px; height: 100px; border: 1px solid #ffffff0a; border-radius: 50%; content: ""; }
+    .metric-label { color: var(--muted); font-size: 11px; }
+    .metric-value { margin-top: 13px; font-size: 27px; font-weight: 740; letter-spacing: -.05em; }
+    .metric-note { margin-top: 3px; color: #77837a; font-size: 10px; }
+    .metric-value.green { color: var(--green); }
+    .metric-value.amber { color: var(--amber); }
+    .panel { margin-top: 18px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .panel-head { display: flex; min-height: 62px; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 17px; border-bottom: 1px solid var(--line); }
+    .panel-title { margin: 0; font-size: 13px; font-weight: 720; }
+    .panel-subtitle { margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .panel-actions { display: flex; align-items: center; gap: 8px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+    th { padding: 11px 16px; color: #77837a; font-size: 9px; font-weight: 760; letter-spacing: .11em; text-transform: uppercase; }
+    td { padding: 13px 16px; border-top: 1px solid #232a25; color: #d4d9d5; font-size: 11px; }
+    tbody tr:hover { background: #ffffff04; }
+    .identity { display: flex; align-items: center; gap: 10px; }
+    .identity-avatar { display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid #334033; border-radius: 9px; background: #20291f; color: var(--accent); font-size: 11px; font-weight: 750; }
+    .identity-name { color: var(--text); font-size: 11px; font-weight: 680; }
+    .identity-id { margin-top: 3px; color: #748077; font-size: 9px; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 99px; color: #aab4ac; font-size: 9px; font-weight: 700; }
+    .badge::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
+    .badge.online { border-color: #2c4838; background: #1c2b22; color: var(--green); }
+    .badge.offline { color: #929d95; }
+    .badge.banned { border-color: #513238; background: #2c1d20; color: var(--red); }
+    .badge.active { border-color: #2c4838; background: #1c2b22; color: var(--green); }
+    .badge.inactive { color: #929d95; }
+    .row-actions { display: flex; justify-content: flex-end; gap: 5px; }
+    .table-empty { padding: 46px 20px; color: var(--muted); text-align: center; white-space: normal; }
+    .pagination { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+    .pagination-actions { display: flex; gap: 6px; }
+    .search {
+      width: min(250px, 34vw); min-height: 35px; padding: 0 11px; border: 1px solid var(--line);
+      border-radius: 9px; background: #101411; color: var(--text); font-size: 11px;
+    }
+    .server-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .server-card { padding: 17px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .server-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .server-card h3 { margin: 0; font-size: 14px; }
+    .server-id { margin-top: 5px; color: #7e8981; font-size: 10px; }
+    .server-address { margin-top: 18px; color: #bdc6bf; font-size: 11px; }
+    .server-capacity { margin-top: 13px; color: var(--muted); font-size: 10px; }
+    .capacity-track { height: 5px; margin-top: 8px; overflow: hidden; border-radius: 5px; background: #2b332d; }
+    .capacity-fill { height: 100%; border-radius: inherit; background: var(--accent); }
+    .server-card-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--line); }
+    .notice { margin-bottom: 16px; padding: 11px 13px; border: 1px solid #5a4930; border-radius: 10px; background: #2b2418; color: #ecd39c; font-size: 11px; line-height: 1.6; }
+    .notice strong { color: #ffe3a0; }
+    .hidden { display: none !important; }
+    .toast-region { position: fixed; right: 20px; bottom: 20px; z-index: 20; display: grid; width: min(360px, calc(100vw - 40px)); gap: 8px; }
+    .toast { padding: 12px 14px; border: 1px solid #344237; border-radius: 11px; background: #1a211c; box-shadow: 0 12px 35px #0008; color: var(--text); font-size: 11px; line-height: 1.5; animation: rise .18s ease-out; }
+    .toast.error { border-color: #61373d; background: #2c1c20; }
+    @keyframes rise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 15; display: grid; place-items: center; padding: 18px; background: #050706c9; backdrop-filter: blur(5px); }
+    .modal { width: min(460px, 100%); max-height: min(90vh, 760px); overflow-y: auto; border: 1px solid #344037; border-radius: 16px; background: #151a17; box-shadow: 0 24px 90px #0009; }
+    .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 21px 15px; border-bottom: 1px solid var(--line); }
+    .modal-head h2 { margin: 0; font-size: 16px; }
+    .modal-head p { margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .modal-close { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: #aeb8b0; font-size: 17px; }
+    .modal-form { display: grid; gap: 13px; padding: 18px 21px 21px; }
+    .field { display: grid; gap: 6px; }
+    .field label { color: #aeb8b0; font-size: 10px; font-weight: 700; }
+    .field input { width: 100%; min-height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #0e120f; color: var(--text); font-size: 11px; }
+    .field-help { color: #77837a; font-size: 9px; }
+    .form-error { color: #ff9292; font-size: 10px; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+    .login-card { width: min(410px, 100%); padding: 24px; border: 1px solid #344037; border-radius: 18px; background: #151a17; box-shadow: 0 25px 90px #000b; }
+    .login-card .brand { padding: 0 0 23px; }
+    .login-card h2 { margin: 0; font-size: 20px; letter-spacing: -.03em; }
+    .login-card > p { margin: 8px 0 20px; color: var(--muted); font-size: 11px; line-height: 1.65; }
+    .login-card .modal-form { padding: 0; }
+    .login-note { margin-top: 16px; color: #718077; font-size: 9px; line-height: 1.6; }
+    .loading { padding: 34px; color: var(--muted); text-align: center; font-size: 11px; }
+    @media (max-width: 1000px) {
+      .sidebar { width: 205px; }
+      .main { margin-left: 205px; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .server-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      .sidebar { position: static; width: auto; height: auto; padding: 12px 14px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .brand { padding: 0 2px 12px; }
+      .nav-label, .sidebar-bottom, .sidebar-foot { display: none; }
+      .nav { grid-template-columns: repeat(3, 1fr); }
+      .nav-button { justify-content: center; gap: 7px; padding: 9px 5px; font-size: 10px; }
+      .nav-icon { width: auto; }
+      .main { margin-left: 0; }
+      .topbar { position: static; min-height: 65px; padding: 12px 17px; }
+      .content { padding-top: 22px; }
+      .user-label { display: none; }
+      .user-chip { margin-left: 2px; padding-left: 10px; }
+      .welcome-row { align-items: flex-start; }
+      .welcome-row h2 { font-size: 20px; }
+      .metrics { gap: 9px; }
+      .metric { min-height: 98px; padding: 13px; }
+      .metric-value { font-size: 23px; }
+      .panel-head { align-items: flex-start; flex-wrap: wrap; }
+      .panel-actions { width: 100%; }
+      .search { flex: 1; width: auto; }
+    }
+    @media (max-width: 420px) {
+      .content { padding-right: 13px; padding-left: 13px; }
+      .topbar { padding-right: 13px; padding-left: 13px; }
+      .button { padding: 0 9px; }
+      .welcome-row { flex-direction: column; }
+      .welcome-row .button { align-self: stretch; }
+    }
+    .sidebar { background: #fff; }
+    .brand-mark { border-radius: 7px; }
+    .nav-button { color: #4d5950; }
+    .nav-button.active { border-color: #d7e5db; background: #edf4ef; color: #236541; }
+    .topbar { background: #f3f4f1ed; }
+    .eyebrow { color: #28734a; }
+    .button.primary:hover { background: #236541; }
+    .button.danger { border-color: #e9d3d1; color: #a33837; }
+    .button.danger:hover { border-color: #dcb9b6; background: #fbefee; }
+    .metric::after { border-color: #2028200a; }
+    th { color: #68736a; }
+    td { border-top-color: #e7ebe6; color: #3d4840; }
+    tbody tr:hover { background: #f7f9f6; }
+    .identity-avatar { border-color: #d7e5db; background: #edf4ef; }
+    .badge.online, .badge.active { border-color: #d3e6d8; background: #edf6ef; }
+    .badge.offline, .badge.inactive { color: #68736a; }
+    .badge.banned { border-color: #eed7d5; background: #fbefee; }
+    .search, .field input { background: #fff; }
+    .server-id, .identity-id, .metric-note { color: #68736a; }
+    .server-address { color: #3d4840; }
+    .capacity-track { background: #e7ebe6; }
+    .notice { border-color: #e8dec5; background: #faf7ef; color: #70551c; }
+    .notice strong { color: #59420f; }
+    .toast { border-color: var(--line); background: #fff; box-shadow: 0 12px 35px #2028201a; }
+    .toast.error { border-color: #eed7d5; background: #fbefee; }
+    .modal-backdrop { background: #20282066; }
+    .modal, .login-card { border-color: var(--line); background: #fff; box-shadow: 0 24px 90px #2028202b; }
+    .modal-close, .field label { color: #4d5950; }
+    .field-help, .login-note { color: #68736a; }
+    .form-error { color: #a33837; }
+    .server-status { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+    .badge.process-running { border-color: #d3e6d8; background: #edf6ef; color: #28734a; }
+    .badge.process-starting, .badge.process-stopping { border-color: #e8dec5; background: #faf7ef; color: #94620c; }
+    .badge.process-failed { border-color: #eed7d5; background: #fbefee; color: #b33e40; }
+    .process-meta { margin-top: 7px; color: var(--muted); font-size: 10px; }
+    .server-card-actions { flex-wrap: wrap; }
+    .log-output { max-height: 55vh; overflow: auto; margin: 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #f7f8f6; color: #303b32; font: 11px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">V</div>
+        <div><div class="brand-name">VEILNET</div><div class="brand-sub">SERVER MANAGER</div></div>
+      </div>
+      <div class="nav-label">Workspace</div>
+      <nav class="nav" aria-label="Main navigation">
+        <button class="nav-button active" data-view="overview"><span class="nav-icon">◫</span>Overview</button>
+        <button class="nav-button" data-view="players"><span class="nav-icon">♙</span>Players</button>
+        <button class="nav-button" data-view="servers"><span class="nav-icon">▤</span>Servers</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="connection-card">
+          <div class="connection-title">Service connections</div>
+          <div class="connection-row"><span>API</span><span class="connection-state"><i id="api-dot" class="dot"></i><span id="api-state">Checking</span></span></div>
+          <div class="connection-row"><span>Redis</span><span class="connection-state"><i id="redis-dot" class="dot"></i><span id="redis-state">Checking</span></span></div>
+        </div>
+        <div class="sidebar-foot">VeilNet Manager · v1.0</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><div class="eyebrow">Operations console</div><h1 id="page-title">Overview</h1></div>
+        <div class="top-actions">
+          <button class="button" id="refresh-button" title="Refresh data">↻ <span class="refresh-label">Refresh</span></button>
+          <div class="user-chip"><div class="avatar">A</div><span class="user-label">Administrator</span></div>
+          <button class="button subtle small" id="logout-button">Sign out</button>
+        </div>
+      </header>
+      <div class="content">
+        <section class="view" id="overview-view">
+          <div class="welcome-row">
+            <div><h2>Manager overview</h2><p>Players, server presence, and local process controls.</p></div>
+            <button class="button primary" data-action="create-server">＋ Add server</button>
+          </div>
+          <div class="notice"><strong>Moderation note</strong> — A ban updates the Manager record and clears presence. Your game server must check ban status and enforce disconnects.</div>
+          <div class="metrics">
+            <article class="metric"><div class="metric-label">Registered players</div><div class="metric-value" id="metric-players">—</div><div class="metric-note">Player records in Manager</div></article>
+            <article class="metric"><div class="metric-label">Players online</div><div class="metric-value green" id="metric-online">—</div><div class="metric-note">Active Redis presence</div></article>
+            <article class="metric"><div class="metric-label">Game servers</div><div class="metric-value" id="metric-servers">—</div><div class="metric-note"><span id="metric-servers-online">—</span> currently reporting</div></article>
+            <article class="metric"><div class="metric-label">Banned players</div><div class="metric-value amber" id="metric-banned">—</div><div class="metric-note">Active moderation records</div></article>
+          </div>
+          <section class="panel">
+            <div class="panel-head"><div><h2 class="panel-title">Game servers</h2><div class="panel-subtitle">Live heartbeat and player capacity</div></div><button class="button small" data-view-link="servers">View all servers →</button></div>
+            <div id="overview-servers" class="server-grid" style="padding:14px"><div class="loading">Loading servers…</div></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h2 class="panel-title">Recently registered players</h2><div class="panel-subtitle">Latest player profiles added to the Manager</div></div><button class="button small" data-view-link="players">Manage players →</button></div>
+            <div class="table-wrap"><table><thead><tr><th>Player</th><th>Presence</th><th>Moderation</th><th>Server</th></tr></thead><tbody id="recent-players"><tr><td colspan="4" class="table-empty">Loading players…</td></tr></tbody></table></div>
+          </section>
+        </section>
+
+        <section class="view hidden" id="players-view">
+          <div class="welcome-row">
+            <div><h2>Player management</h2><p>Review player presence, update profiles, and manage bans.</p></div>
+            <button class="button primary" data-action="create-player">＋ Add player</button>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <div><h2 class="panel-title">Players</h2><div class="panel-subtitle" id="player-count">Loading records…</div></div>
+              <div class="panel-actions"><input class="search" id="player-search" type="search" placeholder="Search username or player ID" aria-label="Search players"><button class="button small" id="clear-search">Clear</button></div>
+            </div>
+            <div class="table-wrap"><table><thead><tr><th>Player</th><th>Presence</th><th>Moderation</th><th>Server</th><th>Actions</th></tr></thead><tbody id="players-body"><tr><td colspan="5" class="table-empty">Loading players…</td></tr></tbody></table></div>
+            <div class="pagination"><span id="pagination-label">—</span><div class="pagination-actions"><button class="button small" id="previous-page">← Previous</button><button class="button small" id="next-page">Next →</button></div></div>
+          </div>
+        </section>
+
+        <section class="view hidden" id="servers-view">
+          <div class="welcome-row">
+            <div><h2>Server management</h2><p>Registered endpoints and local Unreal server processes.</p></div>
+            <button class="button primary" data-action="create-server">＋ Add server</button>
+          </div>
+          <div class="notice hidden" id="launch-notice"><strong>Local launch is not configured.</strong> Package a dedicated Unreal server and set <code>VEILNET_MANAGER_SERVER_EXECUTABLE</code> in the Manager <code>.ENV</code>. This portal cannot supply executable paths or commands.</div>
+          <div id="servers-grid" class="server-grid"><div class="loading">Loading servers…</div></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="login-backdrop" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <div class="login-card">
+      <div class="brand"><div class="brand-mark" aria-hidden="true">V</div><div><div class="brand-name">VEILNET</div><div class="brand-sub">SERVER MANAGER</div></div></div>
+      <h2 id="login-title">Administrator sign in</h2>
+      <p>Enter the Manager admin token to access player and server controls. This token is held in this browser tab only.</p>
+      <form class="modal-form" id="login-form">
+        <div class="field"><label for="admin-token">Admin token</label><input id="admin-token" type="password" autocomplete="current-password" required></div>
+        <div class="form-error" id="login-error" role="alert"></div>
+        <button class="button primary" id="login-submit" type="submit">Connect to Manager</button>
+      </form>
+      <div class="login-note">The portal uses the Manager API at this same origin. It does not connect to the separate VeilNet moderation service.</div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-head"><div><h2 id="modal-title"></h2><p id="modal-description"></p></div><button class="modal-close" id="modal-close" aria-label="Close dialog">×</button></div>
+      <form class="modal-form" id="modal-form"></form>
+    </div>
+  </div>
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const PAGE_SIZE = 50;
+      const TOKEN_KEY = "veilnetManagerAdminToken";
+      const state = {
+        token: sessionStorage.getItem(TOKEN_KEY) || "",
+        view: "overview",
+        playerPage: 0,
+        playerSearch: "",
+        searchTimer: 0,
+        players: [],
+        servers: [],
+        launchAvailable: false,
+        refreshTimer: 0
+      };
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, character => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        })[character]);
+      }
+
+      function notify(message, isError = false) {
+        const toast = document.createElement("div");
+        toast.className = `toast${isError ? " error" : ""}`;
+        toast.textContent = message;
+        $("#toast-region").append(toast);
+        window.setTimeout(() => toast.remove(), 4200);
+      }
+
+      async function request(path, options = {}) {
+        const headers = new Headers(options.headers || {});
+        if (state.token) headers.set("Authorization", `Bearer ${state.token}`);
+        if (options.body) headers.set("Content-Type", "application/json");
+        let response;
+        try {
+          response = await fetch(path, { ...options, headers });
+        } catch {
+          throw new Error("Could not reach the Manager API. Check that the service is running.");
+        }
+        if (response.status === 401) {
+          signOut();
+          throw new Error("Your admin token was rejected. Please sign in again.");
+        }
+        if (!response.ok) {
+          let message = `Request failed (${response.status}).`;
+          try {
+            const payload = await response.json();
+            message = typeof payload.detail === "string"
+              ? payload.detail
+              : JSON.stringify(payload.detail || payload);
+          } catch { /* Keep the status message when an error has no JSON body. */ }
+          throw new Error(message);
+        }
+        if (response.status === 204) return null;
+        return response.json();
+      }
+
+      function showLogin(message = "") {
+        $("#login-backdrop").classList.remove("hidden");
+        $("#login-error").textContent = message;
+        window.setTimeout(() => $("#admin-token").focus(), 0);
+      }
+
+      function signOut() {
+        state.token = "";
+        sessionStorage.removeItem(TOKEN_KEY);
+        $("#admin-token").value = "";
+        $("#logout-button").classList.add("hidden");
+        showLogin();
+      }
+
+      async function signIn(token) {
+        $("#login-submit").disabled = true;
+        $("#login-error").textContent = "";
+        try {
+          const headers = { Authorization: `Bearer ${token}` };
+          const response = await fetch("/api/v1/admin/overview", { headers });
+          if (!response.ok) {
+            if (response.status === 401) throw new Error("That admin token was not accepted.");
+            const body = await response.json().catch(() => ({}));
+            const detail = typeof body.detail === "string"
+              ? body.detail
+              : JSON.stringify(body.detail || body);
+            throw new Error(detail || `Manager returned ${response.status}.`);
+          }
+          state.token = token;
+          sessionStorage.setItem(TOKEN_KEY, token);
+          $("#admin-token").value = "";
+          $("#login-backdrop").classList.add("hidden");
+          $("#logout-button").classList.remove("hidden");
+          await refreshAll();
+        } catch (error) {
+          $("#login-error").textContent = error.message;
+        } finally {
+          $("#login-submit").disabled = false;
+        }
+      }
+
+      function setConnection(name, healthy) {
+        $(`#${name}-dot`).className = `dot ${healthy ? "ok" : "bad"}`;
+        $(`#${name}-state`).textContent = healthy ? "Connected" : "Unavailable";
+      }
+
+      async function updateHealth() {
+        try {
+          const response = await fetch("/status");
+          const payload = await response.json();
+          const data = response.ok ? payload : payload.detail || {};
+          setConnection("api", data.database === "ok");
+          setConnection("redis", data.redis === "ok");
+        } catch {
+          setConnection("api", false);
+          setConnection("redis", false);
+        }
+      }
+
+      function playerRows(players, showActions = true) {
+        if (!players.length) {
+          return `<tr><td colspan="${showActions ? 5 : 4}" class="table-empty">No players found.</td></tr>`;
+        }
+        return players.map(player => {
+          const username = escapeHtml(player.username);
+          const userId = escapeHtml(player.user_id);
+          const server = player.which_server
+            ? `<span class="identity-id">${escapeHtml(player.which_server)}</span>`
+            : `<span class="identity-id">—</span>`;
+          const moderation = player.is_banned
+            ? `<span class="badge banned">Banned</span>`
+            : `<span class="badge active">Clear</span>`;
+          const presence = player.is_online
+            ? `<span class="badge online">Online</span>`
+            : `<span class="badge offline">Offline</span>`;
+          const actions = showActions
+            ? `<td><div class="row-actions">
+                <button class="button small" data-action="edit-player" data-id="${userId}" data-name="${username}">Edit</button>
+                ${player.is_banned
+                  ? `<button class="button small" data-action="unban-player" data-id="${userId}">Unban</button>`
+                  : `<button class="button small" data-action="ban-player" data-id="${userId}" data-name="${username}">Ban</button>`}
+                <button class="button small danger" data-action="delete-player" data-id="${userId}" data-name="${username}" ${player.is_online ? "disabled title=\"Player must be offline to delete\"" : ""}>Delete</button>
+              </div></td>`
+            : "";
+          return `<tr>
+            <td><div class="identity"><div class="identity-avatar">${escapeHtml(username.slice(0, 1).toUpperCase())}</div><div><div class="identity-name">${username}</div><div class="identity-id">${userId}</div></div></div></td>
+            <td>${presence}</td><td>${moderation}</td><td>${server}</td>${actions}
+          </tr>`;
+        }).join("");
+      }
+
+      function serverCard(server) {
+        const capacity = Number(server.server_max_players) || 1;
+        const online = Number(server.online_players) || 0;
+        const fill = Math.min(100, Math.round((online / capacity) * 100));
+        const heartbeatBadge = server.is_online
+          ? `<span class="badge online">Online</span>`
+          : `<span class="badge offline">Offline</span>`;
+        const process = server.process || {};
+        const processStatus = process.status || "not_started";
+        const processLabels = {
+          not_started: "Not started",
+          starting: "Starting",
+          running: "Running",
+          stopping: "Stopping",
+          stopped: "Stopped",
+          failed: "Exited with error"
+        };
+        const processIsActive = ["starting", "running", "stopping"].includes(processStatus);
+        const processBadgeClass = ["starting", "running", "stopping", "failed"].includes(processStatus)
+          ? `process-${processStatus}`
+          : "offline";
+        const processBadge = `<span class="badge ${processBadgeClass}">Process: ${processLabels[processStatus] || "Unknown"}</span>`;
+        const processMeta = process.pid
+          ? `<div class="process-meta">Process ID ${escapeHtml(process.pid)}${process.exit_code !== null && process.exit_code !== undefined ? ` · exit ${escapeHtml(process.exit_code)}` : ""}</div>`
+          : "";
+        return `<article class="server-card">
+          <div class="server-card-top"><div><h3>${escapeHtml(server.server_name)}</h3><div class="server-id">${escapeHtml(server.server_id)}</div></div><div class="server-status">${heartbeatBadge}${processBadge}</div></div>
+          <div class="server-address">${escapeHtml(server.server_ip)}:${escapeHtml(server.server_port)}</div>
+          ${processMeta}
+          <div class="server-capacity">${online} / ${capacity} players</div>
+          <div class="capacity-track" aria-label="${online} of ${capacity} players"><div class="capacity-fill" style="width:${fill}%"></div></div>
+          <div class="server-card-actions">
+            <button class="button small primary" data-action="start-server" data-id="${escapeHtml(server.server_id)}" data-name="${escapeHtml(server.server_name)}" ${!state.launchAvailable || processIsActive ? `disabled title="${state.launchAvailable ? "This process is already active" : "Configure VEILNET_MANAGER_SERVER_EXECUTABLE in the Manager .ENV"}"` : ""}>Start</button>
+            <button class="button small danger" data-action="stop-server" data-id="${escapeHtml(server.server_id)}" data-name="${escapeHtml(server.server_name)}" ${!processIsActive ? "disabled title=\"No active process managed by this Manager\"" : ""}>Stop</button>
+            <button class="button small" data-action="server-logs" data-id="${escapeHtml(server.server_id)}" data-name="${escapeHtml(server.server_name)}" ${!process.pid ? "disabled title=\"No process output is available\"" : ""}>Output</button>
+            <button class="button small" data-action="edit-server" data-id="${escapeHtml(server.server_id)}">Edit details</button>
+            <button class="button small" data-action="delete-server" data-id="${escapeHtml(server.server_id)}" data-name="${escapeHtml(server.server_name)}" ${processIsActive ? "disabled title=\"Stop the process before removing this server\"" : ""}>Remove</button>
+          </div>
+        </article>`;
+      }
+
+      async function loadOverview() {
+        const [overview, serverData, playerData] = await Promise.all([
+          request("/api/v1/admin/overview"),
+          request("/api/v1/admin/servers"),
+          request("/api/v1/admin/players?limit=5&offset=0")
+        ]);
+        $("#metric-players").textContent = overview.players;
+        $("#metric-online").textContent = overview.players_online;
+        $("#metric-servers").textContent = overview.servers;
+        $("#metric-servers-online").textContent = `${overview.servers_online} online`;
+        $("#metric-banned").textContent = overview.players_banned;
+        state.launchAvailable = serverData.launch_available;
+        $("#overview-servers").innerHTML = serverData.items.length
+          ? serverData.items.slice(0, 4).map(serverCard).join("")
+          : `<div class="table-empty" style="grid-column:1/-1">No servers registered yet. Add one to start monitoring.</div>`;
+        $("#recent-players").innerHTML = playerRows(playerData.items, false);
+        state.servers = serverData.items;
+      }
+
+      async function loadPlayers() {
+        const params = new URLSearchParams({
+          limit: String(PAGE_SIZE),
+          offset: String(state.playerPage * PAGE_SIZE)
+        });
+        if (state.playerSearch) params.set("search", state.playerSearch);
+        const data = await request(`/api/v1/admin/players?${params}`);
+        state.players = data.items;
+        $("#players-body").innerHTML = playerRows(data.items);
+        $("#player-count").textContent = state.playerSearch
+          ? `${data.total} matching ${data.total === 1 ? "player" : "players"}`
+          : `${data.total} registered ${data.total === 1 ? "player" : "players"}`;
+        const start = data.total === 0 ? 0 : state.playerPage * PAGE_SIZE + 1;
+        const end = Math.min((state.playerPage + 1) * PAGE_SIZE, data.total);
+        $("#pagination-label").textContent = `${start}–${end} of ${data.total}`;
+        $("#previous-page").disabled = state.playerPage === 0;
+        $("#next-page").disabled = end >= data.total;
+      }
+
+      async function loadServers() {
+        const data = await request("/api/v1/admin/servers");
+        state.servers = data.items;
+        state.launchAvailable = data.launch_available;
+        $("#launch-notice").classList.toggle("hidden", state.launchAvailable);
+        $("#servers-grid").innerHTML = data.items.length
+          ? data.items.map(serverCard).join("")
+          : `<div class="panel table-empty" style="grid-column:1/-1">No servers registered. Use “Add server” to register one.</div>`;
+      }
+
+      async function refreshAll() {
+        if (!state.token) return;
+        $("#refresh-button").disabled = true;
+        try {
+          await updateHealth();
+          const tasks = [loadOverview()];
+          if (state.view === "players") tasks.push(loadPlayers());
+          if (state.view === "servers") tasks.push(loadServers());
+          await Promise.all(tasks);
+        } catch (error) {
+          notify(error.message, true);
+        } finally {
+          $("#refresh-button").disabled = false;
+        }
+      }
+
+      function switchView(view) {
+        state.view = view;
+        $$(".view").forEach(section => section.classList.toggle("hidden", section.id !== `${view}-view`));
+        $$(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === view));
+        $("#page-title").textContent = ({ overview: "Overview", players: "Players", servers: "Servers" })[view];
+        refreshAll();
+      }
+
+      function closeModal() {
+        $("#modal-backdrop").classList.add("hidden");
+        $("#modal-form").replaceChildren();
+      }
+
+      async function openServerLogs(serverId, serverName) {
+        $("#modal-title").textContent = `${serverName} process output`;
+        $("#modal-description").textContent = "Most recent output captured by this Manager instance.";
+        $("#modal-form").innerHTML = `<pre class="log-output">Loading output…</pre><div class="form-actions"><button class="button" type="button" data-action="close-modal">Close</button></div>`;
+        $("#modal-form").onsubmit = event => event.preventDefault();
+        $("#modal-backdrop").classList.remove("hidden");
+        const output = $(".log-output");
+        try {
+          const data = await request(`/api/v1/admin/servers/${encodeURIComponent(serverId)}/logs`);
+          if (!output.isConnected) return;
+          output.textContent = data.items.length
+            ? data.items.join("\n")
+            : "The process has not written any output.";
+        } catch (error) {
+          if (output.isConnected) output.textContent = error.message;
+        }
+      }
+
+      function openForm({ title, description, fields, submitLabel, onSubmit }) {
+        $("#modal-title").textContent = title;
+        $("#modal-description").textContent = description;
+        $("#modal-form").innerHTML = fields.map(field => `
+          <div class="field">
+            <label for="form-${escapeHtml(field.name)}">${escapeHtml(field.label)}</label>
+            <input id="form-${escapeHtml(field.name)}" name="${escapeHtml(field.name)}" type="${field.type || "text"}"
+              value="${escapeHtml(field.value ?? "")}" ${field.required ? "required" : ""}
+              ${field.min !== undefined ? `min="${escapeHtml(field.min)}"` : ""}
+              ${field.max !== undefined ? `max="${escapeHtml(field.max)}"` : ""}
+              ${field.maxLength ? `maxlength="${escapeHtml(field.maxLength)}"` : ""}
+              ${field.minLength ? `minlength="${escapeHtml(field.minLength)}"` : ""}
+              ${field.placeholder ? `placeholder="${escapeHtml(field.placeholder)}"` : ""}>
+            ${field.help ? `<span class="field-help">${escapeHtml(field.help)}</span>` : ""}
+          </div>`).join("") + `
+          <div class="form-error" id="modal-error" role="alert"></div>
+          <div class="form-actions"><button class="button" type="button" data-action="close-modal">Cancel</button><button class="button primary" id="modal-submit" type="submit">${escapeHtml(submitLabel)}</button></div>`;
+        $("#modal-form").onsubmit = async event => {
+          event.preventDefault();
+          const submit = $("#modal-submit");
+          submit.disabled = true;
+          $("#modal-error").textContent = "";
+          const values = Object.fromEntries(new FormData(event.currentTarget).entries());
+          try {
+            await onSubmit(values);
+            closeModal();
+            notify("Changes saved.");
+            await refreshAll();
+          } catch (error) {
+            $("#modal-error").textContent = error.message;
+          } finally {
+            submit.disabled = false;
+          }
+        };
+        $("#modal-backdrop").classList.remove("hidden");
+        const firstInput = $("input", $("#modal-form"));
+        if (firstInput) firstInput.focus();
+      }
+
+      function openPlayerForm(player = null) {
+        const isEdit = Boolean(player);
+        openForm({
+          title: isEdit ? "Edit player" : "Add player",
+          description: isEdit ? `Update ${player.username}'s profile.` : "Create a player record in the Manager.",
+          fields: [
+            ...(isEdit ? [] : [{ name: "user_id", label: "Player ID", required: true, maxLength: 50, placeholder: "Unique trusted player ID" }]),
+            { name: "username", label: "Username", required: true, minLength: 3, maxLength: 20, value: player?.username || "" }
+          ],
+          submitLabel: isEdit ? "Save changes" : "Create player",
+          onSubmit: async values => {
+            const id = encodeURIComponent(player?.user_id || values.user_id);
+            await request(isEdit ? `/api/v1/admin/players/${id}` : "/api/v1/admin/players", {
+              method: isEdit ? "PATCH" : "POST",
+              body: JSON.stringify(isEdit ? { username: values.username } : values)
+            });
+          }
+        });
+      }
+
+      function openBanForm(playerId, username) {
+        openForm({
+          title: `Ban ${username}`,
+          description: "This records the ban and clears Manager presence. It does not itself disconnect a game client.",
+          fields: [{ name: "reason", label: "Ban reason", required: true, maxLength: 500, minLength: 1, placeholder: "Reason visible to moderators" }],
+          submitLabel: "Confirm ban",
+          onSubmit: values => request(`/api/v1/admin/players/${encodeURIComponent(playerId)}/ban`, {
+            method: "POST",
+            body: JSON.stringify({ reason: values.reason })
+          })
+        });
+      }
+
+      function openServerForm(server = null) {
+        const isEdit = Boolean(server);
+        openForm({
+          title: isEdit ? "Edit server" : "Add server",
+          description: isEdit ? "Update the registered endpoint and player capacity." : "Register a game server to monitor its heartbeat and population.",
+          fields: [
+            ...(!isEdit ? [{ name: "server_id", label: "Server ID", required: true, maxLength: 50, placeholder: "Unique server identifier" }] : []),
+            { name: "server_name", label: "Server name", required: true, minLength: 3, maxLength: 50, value: server?.server_name || "" },
+            { name: "server_ip", label: "Host / IP address", required: true, maxLength: 253, value: server?.server_ip || "", placeholder: "127.0.0.1 or game.example.com" },
+            { name: "server_port", label: "Port", type: "number", required: true, min: 1, max: 65535, value: server?.server_port ?? 7777 },
+            { name: "server_max_players", label: "Player capacity", type: "number", required: true, min: 1, max: 10000, value: server?.server_max_players ?? 100 }
+          ],
+          submitLabel: isEdit ? "Save changes" : "Register server",
+          onSubmit: async values => {
+            const payload = {
+              ...values,
+              server_port: Number(values.server_port),
+              server_max_players: Number(values.server_max_players)
+            };
+            const id = encodeURIComponent(server?.server_id || values.server_id);
+            await request(isEdit ? `/api/v1/admin/servers/${id}` : "/api/v1/admin/servers", {
+              method: isEdit ? "PATCH" : "POST",
+              body: JSON.stringify(payload)
+            });
+          }
+        });
+      }
+
+      async function handleAction(action, target) {
+        const id = target.dataset.id;
+        const name = target.dataset.name || id;
+        if (action === "create-player") return openPlayerForm();
+        if (action === "create-server") return openServerForm();
+        if (action === "edit-player") return openPlayerForm({ user_id: id, username: name });
+        if (action === "edit-server") {
+          const server = state.servers.find(item => item.server_id === id);
+          if (!server) throw new Error("Server data is out of date. Refresh and try again.");
+          return openServerForm(server);
+        }
+        if (action === "ban-player") return openBanForm(id, name);
+        if (action === "unban-player") {
+          await request(`/api/v1/admin/players/${encodeURIComponent(id)}/ban`, { method: "DELETE" });
+          notify(`${name} was unbanned.`);
+          return refreshAll();
+        }
+        if (action === "delete-player") {
+          if (!window.confirm(`Permanently delete player “${name}”? This cannot be undone.`)) return;
+          await request(`/api/v1/admin/players/${encodeURIComponent(id)}`, { method: "DELETE" });
+          notify("Player deleted.");
+          return refreshAll();
+        }
+        if (action === "delete-server") {
+          if (!window.confirm(`Remove server “${name}”? This clears its player assignments.`)) return;
+          await request(`/api/v1/admin/servers/${encodeURIComponent(id)}`, { method: "DELETE" });
+          notify("Server removed.");
+          return refreshAll();
+        }
+        if (action === "start-server") {
+          await request(`/api/v1/admin/servers/${encodeURIComponent(id)}/start`, { method: "POST" });
+          notify(`Start requested for ${name}.`);
+          return refreshAll();
+        }
+        if (action === "stop-server") {
+          if (!window.confirm(`Stop the managed process for “${name}”? Players connected to it may be disconnected.`)) return;
+          await request(`/api/v1/admin/servers/${encodeURIComponent(id)}/stop`, { method: "POST" });
+          notify(`${name} stopped.`);
+          return refreshAll();
+        }
+        if (action === "server-logs") return openServerLogs(id, name);
+        if (action === "close-modal") closeModal();
+      }
+
+      $("#login-form").addEventListener("submit", event => {
+        event.preventDefault();
+        signIn($("#admin-token").value.trim());
+      });
+      $("#logout-button").addEventListener("click", signOut);
+      $("#refresh-button").addEventListener("click", refreshAll);
+      $("#modal-close").addEventListener("click", closeModal);
+      $("#modal-backdrop").addEventListener("click", event => {
+        if (event.target === $("#modal-backdrop")) closeModal();
+      });
+      $("#login-backdrop").addEventListener("keydown", event => {
+        if (event.key === "Escape") event.preventDefault();
+      });
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !$("#modal-backdrop").classList.contains("hidden")) closeModal();
+      });
+      document.addEventListener("click", async event => {
+        const target = event.target.closest("[data-action], [data-view], [data-view-link]");
+        if (!target) return;
+        try {
+          if (target.dataset.view || target.dataset.viewLink) {
+            switchView(target.dataset.view || target.dataset.viewLink);
+          } else {
+            await handleAction(target.dataset.action, target);
+          }
+        } catch (error) {
+          notify(error.message, true);
+        }
+      });
+      $("#player-search").addEventListener("input", event => {
+        window.clearTimeout(state.searchTimer);
+        state.searchTimer = window.setTimeout(() => {
+          state.playerSearch = event.target.value.trim();
+          state.playerPage = 0;
+          loadPlayers().catch(error => notify(error.message, true));
+        }, 250);
+      });
+      $("#clear-search").addEventListener("click", () => {
+        $("#player-search").value = "";
+        state.playerSearch = "";
+        state.playerPage = 0;
+        loadPlayers().catch(error => notify(error.message, true));
+      });
+      $("#previous-page").addEventListener("click", () => {
+        state.playerPage = Math.max(0, state.playerPage - 1);
+        loadPlayers().catch(error => notify(error.message, true));
+      });
+      $("#next-page").addEventListener("click", () => {
+        state.playerPage += 1;
+        loadPlayers().catch(error => notify(error.message, true));
+      });
+
+      if (state.token) {
+        $("#logout-button").classList.remove("hidden");
+        refreshAll().catch(error => {
+          if (state.token) showLogin(error.message);
+        });
+      } else {
+        $("#logout-button").classList.add("hidden");
+        showLogin();
+        updateHealth();
+      }
+      state.refreshTimer = window.setInterval(() => {
+        if (state.token) refreshAll();
+        else updateHealth();
+      }, 30000);
+    })();
+  </script>
+</body>
+</html>
