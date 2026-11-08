@@ -3,242 +3,241 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f4f5f2">
+  <meta name="theme-color" content="#f5f7f4">
+  <meta name="description" content="VeilNet Manager operations console">
   <title>VeilNet Manager</title>
   <style>
     :root {
       color-scheme: light;
-      --bg: #f3f4f1;
-      --panel: #ffffff;
-      --panel-raised: #f7f8f6;
-      --panel-hover: #eef1ed;
-      --line: #dfe4de;
-      --text: #202820;
-      --muted: #68736a;
-      --accent: #28734a;
-      --accent-ink: #ffffff;
+      --bg: #f5f7f4;
+      --surface: #fff;
+      --surface-soft: #f8faf7;
+      --surface-hover: #f0f4ef;
+      --line: #e3e9e1;
+      --line-strong: #d3ddd1;
+      --text: #202a22;
+      --muted: #758076;
+      --muted-strong: #58645a;
+      --green: #267349;
+      --green-dark: #1d5b39;
+      --green-soft: #eaf5ed;
+      --amber: #94640f;
+      --amber-soft: #fbf4e4;
       --red: #b33e40;
-      --amber: #94620c;
-      --green: #28734a;
-      --blue: #376d9d;
-      --radius: 14px;
+      --red-soft: #fbefee;
+      --blue: #326b9a;
+      --shadow: 0 12px 36px rgba(31, 49, 34, .055);
+      --radius: 16px;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: var(--bg);
       color: var(--text);
       font-synthesis: none;
       text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     * { box-sizing: border-box; }
     body { min-width: 320px; min-height: 100vh; margin: 0; }
-    button, input { font: inherit; }
+    button, input, select { font: inherit; }
     button { cursor: pointer; }
-    button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #26734955; outline-offset: 2px; }
+    button:disabled { cursor: not-allowed; opacity: .48; }
+    .hidden { display: none !important; }
     .shell { min-height: 100vh; }
     .sidebar {
-      position: fixed; inset: 0 auto 0 0; z-index: 5; display: flex; width: 244px;
-      flex-direction: column; padding: 25px 16px 18px; border-right: 1px solid var(--line);
-      background: #111512;
+      position: fixed; inset: 0 auto 0 0; z-index: 10; display: flex; width: 248px;
+      flex-direction: column; padding: 25px 17px 18px; border-right: 1px solid var(--line);
+      background: var(--surface);
     }
-    .brand { display: flex; align-items: center; gap: 12px; padding: 2px 10px 34px; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 2px 9px 35px; }
     .brand-mark {
-      display: grid; width: 36px; height: 36px; place-items: center; border-radius: 11px;
-      background: var(--accent); color: var(--accent-ink); font-size: 18px; font-weight: 900;
+      display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center;
+      border-radius: 12px; background: var(--green); color: #fff; font-size: 19px; font-weight: 850;
+      box-shadow: 0 5px 12px #2673492b;
     }
-    .brand-name { font-size: 15px; font-weight: 760; letter-spacing: .08em; }
-    .brand-sub { margin-top: 3px; color: var(--muted); font-size: 10px; letter-spacing: .16em; }
-    .nav-label { padding: 0 11px 10px; color: #657168; font-size: 10px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
+    .brand-name { font-size: 14px; font-weight: 850; letter-spacing: .11em; }
+    .brand-sub { margin-top: 4px; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .17em; }
+    .nav-label { padding: 0 11px 10px; color: #98a198; font-size: 9px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
     .nav { display: grid; gap: 5px; }
     .nav-button {
       display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px;
-      border: 1px solid transparent; border-radius: 10px; background: transparent; color: #aeb8b0;
-      text-align: left; font-size: 13px; font-weight: 620; transition: .16s ease;
+      border: 1px solid transparent; border-radius: 11px; background: transparent; color: #69756b;
+      text-align: left; font-size: 12px; font-weight: 680; transition: background .16s, color .16s, border-color .16s;
     }
-    .nav-button:hover { background: var(--panel-raised); color: var(--text); }
-    .nav-button.active { border-color: #303d2b; background: #20291b; color: var(--accent); }
-    .nav-icon { width: 18px; color: currentColor; font-size: 16px; text-align: center; }
+    .nav-button:hover { background: var(--surface-soft); color: var(--text); }
+    .nav-button.active { border-color: #dceade; background: var(--green-soft); color: var(--green-dark); }
+    .nav-icon { display: grid; width: 20px; height: 20px; place-items: center; color: currentColor; font-size: 16px; }
+    .nav-count { margin-left: auto; padding: 3px 7px; border-radius: 7px; background: #f0f3ef; color: #6c786d; font-size: 9px; }
     .sidebar-bottom { margin-top: auto; }
-    .connection-card { padding: 13px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
-    .connection-title { margin-bottom: 10px; color: var(--muted); font-size: 11px; }
-    .connection-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; font-size: 11px; }
-    .connection-state { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
-    .dot { width: 7px; height: 7px; border-radius: 50%; background: #647068; }
-    .dot.ok { background: var(--green); box-shadow: 0 0 10px #77d69b66; }
+    .connection-card { padding: 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft); }
+    .connection-title { margin-bottom: 10px; color: var(--muted); font-size: 10px; font-weight: 750; }
+    .connection-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 10px; }
+    .connection-state { display: inline-flex; align-items: center; gap: 6px; color: var(--muted-strong); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #aab3aa; }
+    .dot.ok { background: #2f9a5d; box-shadow: 0 0 0 3px #2f9a5d18; }
     .dot.bad { background: var(--red); }
-    .sidebar-foot { padding: 16px 10px 0; color: #647068; font-size: 10px; }
-    .main { min-height: 100vh; margin-left: 244px; }
+    .sidebar-foot { padding: 15px 10px 0; color: #98a198; font-size: 9px; }
+    .main { min-height: 100vh; margin-left: 248px; }
     .topbar {
-      position: sticky; top: 0; z-index: 4; display: flex; min-height: 76px; align-items: center;
-      justify-content: space-between; padding: 14px clamp(20px, 4vw, 52px);
-      border-bottom: 1px solid var(--line); background: #0d100feF; backdrop-filter: blur(18px);
+      position: sticky; top: 0; z-index: 5; display: flex; min-height: 76px; align-items: center;
+      justify-content: space-between; gap: 18px; padding: 14px clamp(22px, 4vw, 52px);
+      border-bottom: 1px solid var(--line); background: #f5f7f4ed; backdrop-filter: blur(16px);
     }
-    .eyebrow { color: var(--accent); font-size: 10px; font-weight: 760; letter-spacing: .16em; text-transform: uppercase; }
-    h1 { margin: 5px 0 0; font-size: 20px; letter-spacing: -.035em; }
-    .top-actions { display: flex; align-items: center; gap: 9px; }
-    .user-chip { display: flex; align-items: center; gap: 9px; margin-left: 8px; padding-left: 16px; border-left: 1px solid var(--line); }
-    .avatar { display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid #485344; border-radius: 50%; background: #293223; color: var(--accent); font-size: 12px; font-weight: 800; }
-    .user-label { color: #c7cec9; font-size: 11px; }
-    .content { width: min(1400px, 100%); margin: 0 auto; padding: 30px clamp(20px, 4vw, 52px) 56px; }
-    .welcome-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
-    .welcome-row h2 { margin: 0; font-size: 23px; letter-spacing: -.04em; }
-    .welcome-row p { margin: 7px 0 0; color: var(--muted); font-size: 12px; }
+    .eyebrow { color: var(--green); font-size: 9px; font-weight: 850; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 5px 0 0; font-size: 20px; letter-spacing: -.04em; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .updated-label { color: var(--muted); font-size: 10px; white-space: nowrap; }
+    .user-chip { display: flex; align-items: center; gap: 9px; margin-left: 7px; padding-left: 14px; border-left: 1px solid var(--line); }
+    .avatar { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid #d9e8db; border-radius: 11px; background: var(--green-soft); color: var(--green); font-size: 11px; font-weight: 850; }
+    .user-label { color: var(--muted-strong); font-size: 10px; font-weight: 700; }
+    .content { width: min(1480px, 100%); margin: 0 auto; padding: 29px clamp(22px, 4vw, 52px) 55px; }
+    .welcome-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
+    .welcome-row h2 { margin: 0; font-size: 24px; letter-spacing: -.045em; }
+    .welcome-row p { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
     .button {
       display: inline-flex; min-height: 36px; align-items: center; justify-content: center; gap: 8px;
-      padding: 0 13px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel-raised);
-      color: var(--text); font-size: 11px; font-weight: 700; transition: .16s ease;
+      padding: 0 13px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface);
+      color: var(--muted-strong); font-size: 10px; font-weight: 760; white-space: nowrap;
+      transition: border-color .16s, background .16s, transform .16s;
     }
-    .button:hover { border-color: #53604f; background: var(--panel-hover); }
-    .button.primary { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
-    .button.primary:hover { background: #c9f778; }
-    .button.danger { border-color: #553237; color: #ff9696; }
-    .button.danger:hover { border-color: #8e454b; background: #321c20; }
+    .button:hover:not(:disabled) { border-color: #aabca9; background: var(--surface-hover); }
+    .button:active:not(:disabled) { transform: translateY(1px); }
+    .button.primary { border-color: var(--green); background: var(--green); color: #fff; box-shadow: 0 3px 8px #2673491c; }
+    .button.primary:hover:not(:disabled) { border-color: var(--green-dark); background: var(--green-dark); }
+    .button.danger { border-color: #eed6d4; background: #fff; color: var(--red); }
+    .button.danger:hover:not(:disabled) { border-color: #dfb9b6; background: var(--red-soft); }
     .button.subtle { border-color: transparent; background: transparent; color: var(--muted); }
-    .button.small { min-height: 29px; padding: 0 9px; font-size: 10px; }
-    .button:disabled { cursor: not-allowed; opacity: .45; }
-    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin-bottom: 25px; }
-    .metric { position: relative; overflow: hidden; min-height: 112px; padding: 17px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
-    .metric::after { position: absolute; top: -30px; right: -22px; width: 100px; height: 100px; border: 1px solid #ffffff0a; border-radius: 50%; content: ""; }
-    .metric-label { color: var(--muted); font-size: 11px; }
-    .metric-value { margin-top: 13px; font-size: 27px; font-weight: 740; letter-spacing: -.05em; }
-    .metric-note { margin-top: 3px; color: #77837a; font-size: 10px; }
-    .metric-value.green { color: var(--green); }
-    .metric-value.amber { color: var(--amber); }
-    .panel { margin-top: 18px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
-    .panel-head { display: flex; min-height: 62px; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 17px; border-bottom: 1px solid var(--line); }
-    .panel-title { margin: 0; font-size: 13px; font-weight: 720; }
-    .panel-subtitle { margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .button.small { min-height: 29px; padding: 0 9px; border-radius: 8px; font-size: 9px; }
+    .button.icon-button { width: 36px; padding: 0; font-size: 15px; }
+    .notice { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 17px; padding: 13px 15px; border: 1px solid #efe2c5; border-radius: 12px; background: #fdf9ef; color: #725a25; font-size: 10px; line-height: 1.65; }
+    .notice-icon { display: grid; width: 22px; height: 22px; flex: 0 0 auto; place-items: center; border-radius: 7px; background: #f7edcf; font-weight: 850; }
+    .notice strong { color: #59420f; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin-bottom: 23px; }
+    .metric { position: relative; overflow: hidden; min-height: 126px; padding: 17px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: 0 2px 5px #26382904; }
+    .metric-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .metric-label { color: var(--muted); font-size: 10px; font-weight: 650; }
+    .metric-icon { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 10px; background: #f0f5ef; color: var(--green); font-size: 15px; }
+    .metric-icon.amber { background: var(--amber-soft); color: var(--amber); }
+    .metric-value { margin-top: 12px; font-size: 29px; font-weight: 780; letter-spacing: -.06em; line-height: 1; }
+    .metric-note { margin-top: 8px; color: var(--muted); font-size: 9px; }
+    .metric-note strong { color: var(--green); font-weight: 750; }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(270px, .8fr); gap: 16px; align-items: start; }
+    .panel { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: 0 2px 6px #26382904; }
+    .panel + .panel { margin-top: 17px; }
+    .panel-head { display: flex; min-height: 65px; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 17px; border-bottom: 1px solid var(--line); }
+    .panel-title { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: -.01em; }
+    .panel-subtitle { margin-top: 4px; color: var(--muted); font-size: 9px; }
     .panel-actions { display: flex; align-items: center; gap: 8px; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
-    th { padding: 11px 16px; color: #77837a; font-size: 9px; font-weight: 760; letter-spacing: .11em; text-transform: uppercase; }
-    td { padding: 13px 16px; border-top: 1px solid #232a25; color: #d4d9d5; font-size: 11px; }
-    tbody tr:hover { background: #ffffff04; }
-    .identity { display: flex; align-items: center; gap: 10px; }
-    .identity-avatar { display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid #334033; border-radius: 9px; background: #20291f; color: var(--accent); font-size: 11px; font-weight: 750; }
-    .identity-name { color: var(--text); font-size: 11px; font-weight: 680; }
-    .identity-id { margin-top: 3px; color: #748077; font-size: 9px; }
-    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 99px; color: #aab4ac; font-size: 9px; font-weight: 700; }
-    .badge::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
-    .badge.online { border-color: #2c4838; background: #1c2b22; color: var(--green); }
-    .badge.offline { color: #929d95; }
-    .badge.banned { border-color: #513238; background: #2c1d20; color: var(--red); }
-    .badge.active { border-color: #2c4838; background: #1c2b22; color: var(--green); }
-    .badge.inactive { color: #929d95; }
+    th { padding: 11px 15px; background: #fbfcfa; color: #869187; font-size: 8px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+    td { padding: 13px 15px; border-top: 1px solid #edf0eb; color: #526054; font-size: 10px; }
+    tbody tr { transition: background .12s; }
+    tbody tr:hover { background: #fafcf9; }
+    .identity { display: flex; align-items: center; gap: 9px; }
+    .identity-avatar { display: grid; width: 31px; height: 31px; flex: 0 0 auto; place-items: center; border: 1px solid #dceade; border-radius: 10px; background: var(--green-soft); color: var(--green); font-size: 10px; font-weight: 850; }
+    .identity-name { color: var(--text); font-size: 10px; font-weight: 780; }
+    .identity-id { max-width: 190px; overflow: hidden; margin-top: 3px; color: #8b958c; font-size: 8px; text-overflow: ellipsis; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 99px; background: #f8faf7; color: #758076; font-size: 8px; font-weight: 800; }
+    .badge::before { width: 5px; height: 5px; flex: 0 0 auto; border-radius: 50%; background: currentColor; content: ""; }
+    .badge.online, .badge.active, .badge.process-running { border-color: #d5e9d9; background: #edf7ef; color: #267349; }
+    .badge.offline, .badge.inactive { border-color: #e4e9e2; background: #f7f9f6; color: #7b867c; }
+    .badge.banned, .badge.process-failed { border-color: #eed6d4; background: var(--red-soft); color: var(--red); }
+    .badge.process-starting, .badge.process-stopping { border-color: #efe2c5; background: var(--amber-soft); color: var(--amber); }
     .row-actions { display: flex; justify-content: flex-end; gap: 5px; }
-    .table-empty { padding: 46px 20px; color: var(--muted); text-align: center; white-space: normal; }
-    .pagination { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+    .table-empty { padding: 42px 18px; color: var(--muted); text-align: center; white-space: normal; line-height: 1.6; }
+    .pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; border-top: 1px solid var(--line); color: var(--muted); font-size: 9px; }
     .pagination-actions { display: flex; gap: 6px; }
-    .search {
-      width: min(250px, 34vw); min-height: 35px; padding: 0 11px; border: 1px solid var(--line);
-      border-radius: 9px; background: #101411; color: var(--text); font-size: 11px;
-    }
-    .server-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-    .server-card { padding: 17px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
-    .server-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-    .server-card h3 { margin: 0; font-size: 14px; }
-    .server-id { margin-top: 5px; color: #7e8981; font-size: 10px; }
-    .server-address { margin-top: 18px; color: #bdc6bf; font-size: 11px; }
-    .server-capacity { margin-top: 13px; color: var(--muted); font-size: 10px; }
-    .capacity-track { height: 5px; margin-top: 8px; overflow: hidden; border-radius: 5px; background: #2b332d; }
-    .capacity-fill { height: 100%; border-radius: inherit; background: var(--accent); }
-    .server-card-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--line); }
-    .notice { margin-bottom: 16px; padding: 11px 13px; border: 1px solid #5a4930; border-radius: 10px; background: #2b2418; color: #ecd39c; font-size: 11px; line-height: 1.6; }
-    .notice strong { color: #ffe3a0; }
-    .hidden { display: none !important; }
-    .toast-region { position: fixed; right: 20px; bottom: 20px; z-index: 20; display: grid; width: min(360px, calc(100vw - 40px)); gap: 8px; }
-    .toast { padding: 12px 14px; border: 1px solid #344237; border-radius: 11px; background: #1a211c; box-shadow: 0 12px 35px #0008; color: var(--text); font-size: 11px; line-height: 1.5; animation: rise .18s ease-out; }
-    .toast.error { border-color: #61373d; background: #2c1c20; }
+    .search { width: min(250px, 34vw); min-height: 35px; padding: 0 11px; border: 1px solid var(--line-strong); border-radius: 9px; background: #fff; color: var(--text); font-size: 10px; }
+    .server-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+    #overview-servers { padding: 14px; }
+    .server-card { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: #fff; transition: border-color .16s, box-shadow .16s; }
+    .server-card:hover { border-color: #cbd9c9; box-shadow: var(--shadow); }
+    .server-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .server-card h3 { overflow-wrap: anywhere; margin: 0; font-size: 12px; font-weight: 800; }
+    .server-id { margin-top: 5px; color: #8a958b; font-size: 9px; }
+    .server-status { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+    .server-address { overflow-wrap: anywhere; margin-top: 17px; color: #536055; font-size: 10px; font-weight: 700; }
+    .process-meta { margin-top: 6px; color: var(--muted); font-size: 9px; }
+    .server-capacity { display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; color: var(--muted); font-size: 9px; }
+    .capacity-track { height: 5px; margin-top: 8px; overflow: hidden; border-radius: 5px; background: #edf1eb; }
+    .capacity-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #3d9461, #78bd83); transition: width .25s; }
+    .server-card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 15px; padding-top: 12px; border-top: 1px solid #edf0eb; }
+    .server-card-actions .button:last-child { margin-left: auto; }
+    .log-output { max-height: 55vh; overflow: auto; margin: 0; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: #f7f9f6; color: #354136; font: 10px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .toast-region { position: fixed; right: 20px; bottom: 20px; z-index: 30; display: grid; width: min(360px, calc(100vw - 40px)); gap: 8px; }
+    .toast { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; box-shadow: 0 12px 35px #2028201a; color: var(--text); font-size: 10px; line-height: 1.5; animation: rise .18s ease-out; }
+    .toast.error { border-color: #eed6d4; background: var(--red-soft); color: #8d3033; }
     @keyframes rise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
-    .modal-backdrop { position: fixed; inset: 0; z-index: 15; display: grid; place-items: center; padding: 18px; background: #050706c9; backdrop-filter: blur(5px); }
-    .modal { width: min(460px, 100%); max-height: min(90vh, 760px); overflow-y: auto; border: 1px solid #344037; border-radius: 16px; background: #151a17; box-shadow: 0 24px 90px #0009; }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 18px; background: #20282066; backdrop-filter: blur(5px); }
+    .modal { width: min(470px, 100%); max-height: min(90vh, 760px); overflow-y: auto; border: 1px solid var(--line); border-radius: 17px; background: #fff; box-shadow: 0 24px 90px #2028202b; }
     .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 21px 15px; border-bottom: 1px solid var(--line); }
-    .modal-head h2 { margin: 0; font-size: 16px; }
-    .modal-head p { margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
-    .modal-close { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: #aeb8b0; font-size: 17px; }
+    .modal-head h2 { margin: 0; font-size: 15px; letter-spacing: -.02em; }
+    .modal-head p { margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .modal-close { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: #667268; font-size: 17px; }
     .modal-form { display: grid; gap: 13px; padding: 18px 21px 21px; }
     .field { display: grid; gap: 6px; }
-    .field label { color: #aeb8b0; font-size: 10px; font-weight: 700; }
-    .field input { width: 100%; min-height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #0e120f; color: var(--text); font-size: 11px; }
-    .field-help { color: #77837a; font-size: 9px; }
-    .form-error { color: #ff9292; font-size: 10px; }
-    .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
-    .login-card { width: min(410px, 100%); padding: 24px; border: 1px solid #344037; border-radius: 18px; background: #151a17; box-shadow: 0 25px 90px #000b; }
-    .login-card .brand { padding: 0 0 23px; }
-    .login-card h2 { margin: 0; font-size: 20px; letter-spacing: -.03em; }
-    .login-card > p { margin: 8px 0 20px; color: var(--muted); font-size: 11px; line-height: 1.65; }
+    .field label { color: #536055; font-size: 10px; font-weight: 780; }
+    .field input, .field select { width: 100%; min-height: 39px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 9px; background: #fff; color: var(--text); font-size: 10px; }
+    .field-help { color: var(--muted); font-size: 9px; line-height: 1.5; }
+    .form-error { color: var(--red); font-size: 10px; line-height: 1.5; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 5px; }
+    .login-backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 18px; background: #edf2ecdd; backdrop-filter: blur(12px); }
+    .login-card { width: min(420px, 100%); padding: 27px; border: 1px solid var(--line); border-radius: 20px; background: #fff; box-shadow: 0 25px 90px #2028201a; }
+    .login-card .brand { padding: 0 0 28px; }
+    .login-card h2 { margin: 0; font-size: 22px; letter-spacing: -.04em; }
+    .login-card > p { margin: 9px 0 22px; color: var(--muted); font-size: 11px; line-height: 1.7; }
     .login-card .modal-form { padding: 0; }
-    .login-note { margin-top: 16px; color: #718077; font-size: 9px; line-height: 1.6; }
-    .loading { padding: 34px; color: var(--muted); text-align: center; font-size: 11px; }
-    @media (max-width: 1000px) {
-      .sidebar { width: 205px; }
-      .main { margin-left: 205px; }
+    .login-note { margin-top: 17px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 9px; line-height: 1.65; }
+    .loading { padding: 32px 18px; color: var(--muted); text-align: center; font-size: 10px; }
+    .loading::before { display: block; width: 18px; height: 18px; margin: 0 auto 10px; border: 2px solid #dfe8dd; border-top-color: var(--green); border-radius: 50%; animation: spin .8s linear infinite; content: ""; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 1150px) {
+      .sidebar { width: 220px; }
+      .main { margin-left: 220px; }
       .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .server-grid { grid-template-columns: 1fr; }
+      .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
     }
-    @media (max-width: 700px) {
-      .sidebar { position: static; width: auto; height: auto; padding: 12px 14px; border-right: 0; border-bottom: 1px solid var(--line); }
-      .brand { padding: 0 2px 12px; }
+    @media (max-width: 800px) {
+      .sidebar { position: static; width: auto; padding: 13px 16px 12px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .brand { padding: 0 2px 13px; }
       .nav-label, .sidebar-bottom, .sidebar-foot { display: none; }
-      .nav { grid-template-columns: repeat(3, 1fr); }
+      .nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .nav-button { justify-content: center; gap: 7px; padding: 9px 5px; font-size: 10px; }
-      .nav-icon { width: auto; }
+      .nav-count { margin-left: 0; }
       .main { margin-left: 0; }
-      .topbar { position: static; min-height: 65px; padding: 12px 17px; }
-      .content { padding-top: 22px; }
+      .topbar { position: static; min-height: 66px; padding: 12px 18px; }
+      .content { padding: 23px 18px 40px; }
+      .updated-label { display: none; }
       .user-label { display: none; }
       .user-chip { margin-left: 2px; padding-left: 10px; }
-      .welcome-row { align-items: flex-start; }
-      .welcome-row h2 { font-size: 20px; }
+      .server-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 560px) {
+      .topbar { align-items: flex-start; }
+      .top-actions { gap: 5px; }
+      .top-actions .refresh-label { display: none; }
+      .top-actions .button { padding: 0 9px; }
+      .top-actions .button.icon-button { width: 33px; }
+      .content { padding-right: 13px; padding-left: 13px; }
+      .welcome-row { align-items: flex-start; flex-direction: column; }
+      .welcome-row .button { align-self: stretch; }
+      .welcome-row h2 { font-size: 21px; }
       .metrics { gap: 9px; }
-      .metric { min-height: 98px; padding: 13px; }
-      .metric-value { font-size: 23px; }
+      .metric { min-height: 112px; padding: 13px; }
+      .metric-value { font-size: 25px; }
+      .metric-icon { width: 27px; height: 27px; }
+      .server-grid { grid-template-columns: minmax(0, 1fr); }
       .panel-head { align-items: flex-start; flex-wrap: wrap; }
       .panel-actions { width: 100%; }
-      .search { flex: 1; width: auto; }
+      .search { flex: 1; width: auto; min-width: 0; }
+      .user-chip { display: none; }
+      .notice { font-size: 9px; }
+      .pagination { align-items: flex-start; flex-direction: column; }
     }
-    @media (max-width: 420px) {
-      .content { padding-right: 13px; padding-left: 13px; }
-      .topbar { padding-right: 13px; padding-left: 13px; }
-      .button { padding: 0 9px; }
-      .welcome-row { flex-direction: column; }
-      .welcome-row .button { align-self: stretch; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
     }
-    .sidebar { background: #fff; }
-    .brand-mark { border-radius: 7px; }
-    .nav-button { color: #4d5950; }
-    .nav-button.active { border-color: #d7e5db; background: #edf4ef; color: #236541; }
-    .topbar { background: #f3f4f1ed; }
-    .eyebrow { color: #28734a; }
-    .button.primary:hover { background: #236541; }
-    .button.danger { border-color: #e9d3d1; color: #a33837; }
-    .button.danger:hover { border-color: #dcb9b6; background: #fbefee; }
-    .metric::after { border-color: #2028200a; }
-    th { color: #68736a; }
-    td { border-top-color: #e7ebe6; color: #3d4840; }
-    tbody tr:hover { background: #f7f9f6; }
-    .identity-avatar { border-color: #d7e5db; background: #edf4ef; }
-    .badge.online, .badge.active { border-color: #d3e6d8; background: #edf6ef; }
-    .badge.offline, .badge.inactive { color: #68736a; }
-    .badge.banned { border-color: #eed7d5; background: #fbefee; }
-    .search, .field input { background: #fff; }
-    .server-id, .identity-id, .metric-note { color: #68736a; }
-    .server-address { color: #3d4840; }
-    .capacity-track { background: #e7ebe6; }
-    .notice { border-color: #e8dec5; background: #faf7ef; color: #70551c; }
-    .notice strong { color: #59420f; }
-    .toast { border-color: var(--line); background: #fff; box-shadow: 0 12px 35px #2028201a; }
-    .toast.error { border-color: #eed7d5; background: #fbefee; }
-    .modal-backdrop { background: #20282066; }
-    .modal, .login-card { border-color: var(--line); background: #fff; box-shadow: 0 24px 90px #2028202b; }
-    .modal-close, .field label { color: #4d5950; }
-    .field-help, .login-note { color: #68736a; }
-    .form-error { color: #a33837; }
-    .server-status { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
-    .badge.process-running { border-color: #d3e6d8; background: #edf6ef; color: #28734a; }
-    .badge.process-starting, .badge.process-stopping { border-color: #e8dec5; background: #faf7ef; color: #94620c; }
-    .badge.process-failed { border-color: #eed7d5; background: #fbefee; color: #b33e40; }
-    .process-meta { margin-top: 7px; color: var(--muted); font-size: 10px; }
-    .server-card-actions { flex-wrap: wrap; }
-    .log-output { max-height: 55vh; overflow: auto; margin: 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #f7f8f6; color: #303b32; font: 11px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
   </style>
 </head>
 <body>
@@ -256,8 +255,8 @@
       </nav>
       <div class="sidebar-bottom">
         <div class="connection-card">
-          <div class="connection-title">Service connections</div>
-          <div class="connection-row"><span>API</span><span class="connection-state"><i id="api-dot" class="dot"></i><span id="api-state">Checking</span></span></div>
+          <div class="connection-title">SERVICE CONNECTIONS</div>
+          <div class="connection-row"><span>Manager API</span><span class="connection-state"><i id="api-dot" class="dot"></i><span id="api-state">Checking</span></span></div>
           <div class="connection-row"><span>Redis</span><span class="connection-state"><i id="redis-dot" class="dot"></i><span id="redis-state">Checking</span></span></div>
         </div>
         <div class="sidebar-foot">VeilNet Manager · v1.0</div>
@@ -268,7 +267,8 @@
       <header class="topbar">
         <div><div class="eyebrow">Operations console</div><h1 id="page-title">Overview</h1></div>
         <div class="top-actions">
-          <button class="button" id="refresh-button" title="Refresh data">↻ <span class="refresh-label">Refresh</span></button>
+          <span class="updated-label" id="last-updated">Waiting for data</span>
+          <button class="button icon-button" id="refresh-button" title="Refresh data" aria-label="Refresh data">↻</button>
           <div class="user-chip"><div class="avatar">A</div><span class="user-label">Administrator</span></div>
           <button class="button subtle small" id="logout-button">Sign out</button>
         </div>
@@ -276,34 +276,36 @@
       <div class="content">
         <section class="view" id="overview-view">
           <div class="welcome-row">
-            <div><h2>Manager overview</h2><p>Players, server presence, and local process controls.</p></div>
+            <div><h2>Manager overview</h2><p>Monitor player activity, server health, and managed game processes.</p></div>
             <button class="button primary" data-action="create-server">＋ Add server</button>
           </div>
-          <div class="notice"><strong>Moderation note</strong> — A ban updates the Manager record and clears presence. Your game server must check ban status and enforce disconnects.</div>
+          <div class="notice"><span class="notice-icon">!</span><div><strong>Moderation reminder</strong> — A ban updates the Manager record and clears presence. Your game server must check ban status and enforce disconnects.</div></div>
           <div class="metrics">
-            <article class="metric"><div class="metric-label">Registered players</div><div class="metric-value" id="metric-players">—</div><div class="metric-note">Player records in Manager</div></article>
-            <article class="metric"><div class="metric-label">Players online</div><div class="metric-value green" id="metric-online">—</div><div class="metric-note">Active Redis presence</div></article>
-            <article class="metric"><div class="metric-label">Game servers</div><div class="metric-value" id="metric-servers">—</div><div class="metric-note"><span id="metric-servers-online">—</span> currently reporting</div></article>
-            <article class="metric"><div class="metric-label">Banned players</div><div class="metric-value amber" id="metric-banned">—</div><div class="metric-note">Active moderation records</div></article>
+            <article class="metric"><div class="metric-top"><div class="metric-label">Registered players</div><div class="metric-icon">♙</div></div><div class="metric-value" id="metric-players">—</div><div class="metric-note">Player records in Manager</div></article>
+            <article class="metric"><div class="metric-top"><div class="metric-label">Players online</div><div class="metric-icon">⌁</div></div><div class="metric-value" id="metric-online">—</div><div class="metric-note">Active Redis presence</div></article>
+            <article class="metric"><div class="metric-top"><div class="metric-label">Game servers</div><div class="metric-icon">▤</div></div><div class="metric-value" id="metric-servers">—</div><div class="metric-note"><strong id="metric-servers-online">—</strong> currently reporting</div></article>
+            <article class="metric"><div class="metric-top"><div class="metric-label">Banned players</div><div class="metric-icon amber">⊘</div></div><div class="metric-value" id="metric-banned">—</div><div class="metric-note">Active moderation records</div></article>
           </div>
-          <section class="panel">
-            <div class="panel-head"><div><h2 class="panel-title">Game servers</h2><div class="panel-subtitle">Live heartbeat and player capacity</div></div><button class="button small" data-view-link="servers">View all servers →</button></div>
-            <div id="overview-servers" class="server-grid" style="padding:14px"><div class="loading">Loading servers…</div></div>
-          </section>
-          <section class="panel">
-            <div class="panel-head"><div><h2 class="panel-title">Recently registered players</h2><div class="panel-subtitle">Latest player profiles added to the Manager</div></div><button class="button small" data-view-link="players">Manage players →</button></div>
-            <div class="table-wrap"><table><thead><tr><th>Player</th><th>Presence</th><th>Moderation</th><th>Server</th></tr></thead><tbody id="recent-players"><tr><td colspan="4" class="table-empty">Loading players…</td></tr></tbody></table></div>
-          </section>
+          <div class="dashboard-grid">
+            <section class="panel">
+              <div class="panel-head"><div><h2 class="panel-title">Game servers</h2><div class="panel-subtitle">Heartbeat, process state and player capacity</div></div><button class="button small" data-view-link="servers">All servers →</button></div>
+              <div id="overview-servers" class="server-grid"><div class="loading">Loading servers…</div></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><h2 class="panel-title">Recently registered</h2><div class="panel-subtitle">Latest player profiles</div></div><button class="button small" data-view-link="players">Manage →</button></div>
+              <div class="table-wrap"><table><thead><tr><th>Player</th><th>Presence</th><th>Moderation</th></tr></thead><tbody id="recent-players"><tr><td colspan="3" class="table-empty">Loading players…</td></tr></tbody></table></div>
+            </section>
+          </div>
         </section>
 
         <section class="view hidden" id="players-view">
           <div class="welcome-row">
-            <div><h2>Player management</h2><p>Review player presence, update profiles, and manage bans.</p></div>
+            <div><h2>Player management</h2><p>Review presence, update player profiles, and manage moderation.</p></div>
             <button class="button primary" data-action="create-player">＋ Add player</button>
           </div>
           <div class="panel">
             <div class="panel-head">
-              <div><h2 class="panel-title">Players</h2><div class="panel-subtitle" id="player-count">Loading records…</div></div>
+              <div><h2 class="panel-title">All players</h2><div class="panel-subtitle" id="player-count">Loading records…</div></div>
               <div class="panel-actions"><input class="search" id="player-search" type="search" placeholder="Search username or player ID" aria-label="Search players"><button class="button small" id="clear-search">Clear</button></div>
             </div>
             <div class="table-wrap"><table><thead><tr><th>Player</th><th>Presence</th><th>Moderation</th><th>Server</th><th>Actions</th></tr></thead><tbody id="players-body"><tr><td colspan="5" class="table-empty">Loading players…</td></tr></tbody></table></div>
@@ -313,27 +315,27 @@
 
         <section class="view hidden" id="servers-view">
           <div class="welcome-row">
-            <div><h2>Server management</h2><p>Registered endpoints and local Unreal server processes.</p></div>
+            <div><h2>Server management</h2><p>Register endpoints and manage local Unity or Unreal dedicated-server processes.</p></div>
             <button class="button primary" data-action="create-server">＋ Add server</button>
           </div>
-          <div class="notice hidden" id="launch-notice"><strong>Local launch is not configured.</strong> Package a dedicated Unreal server and set <code>VEILNET_MANAGER_SERVER_EXECUTABLE</code> in the Manager <code>.ENV</code>. This portal cannot supply executable paths or commands.</div>
+          <div class="notice hidden" id="launch-notice"><span class="notice-icon">!</span><div><strong>Local launch is not configured.</strong> Set an engine-specific server executable in the Manager environment. This portal cannot supply executable paths or commands.</div></div>
           <div id="servers-grid" class="server-grid"><div class="loading">Loading servers…</div></div>
         </section>
       </div>
     </main>
   </div>
 
-  <div class="modal-backdrop hidden" id="login-backdrop" role="dialog" aria-modal="true" aria-labelledby="login-title">
+  <div class="modal-backdrop login-backdrop hidden" id="login-backdrop" role="dialog" aria-modal="true" aria-labelledby="login-title">
     <div class="login-card">
       <div class="brand"><div class="brand-mark" aria-hidden="true">V</div><div><div class="brand-name">VEILNET</div><div class="brand-sub">SERVER MANAGER</div></div></div>
-      <h2 id="login-title">Administrator sign in</h2>
-      <p>Enter the Manager admin token to access player and server controls. This token is held in this browser tab only.</p>
+      <h2 id="login-title">Welcome back.</h2>
+      <p>Sign in with your Manager admin token to access player moderation and server controls.</p>
       <form class="modal-form" id="login-form">
-        <div class="field"><label for="admin-token">Admin token</label><input id="admin-token" type="password" autocomplete="current-password" required></div>
+        <div class="field"><label for="admin-token">Administrator token</label><input id="admin-token" type="password" autocomplete="current-password" placeholder="Enter your admin token" required></div>
         <div class="form-error" id="login-error" role="alert"></div>
-        <button class="button primary" id="login-submit" type="submit">Connect to Manager</button>
+        <button class="button primary" id="login-submit" type="submit">Connect to Manager <span>→</span></button>
       </form>
-      <div class="login-note">The portal uses the Manager API at this same origin. It does not connect to the separate VeilNet moderation service.</div>
+      <div class="login-note">Connected to the Manager API at this origin. This portal does not connect directly to the separate VeilNet moderation service.</div>
     </div>
   </div>
 
@@ -357,6 +359,7 @@
         playerPage: 0,
         playerSearch: "",
         searchTimer: 0,
+        playerRequestId: 0,
         players: [],
         servers: [],
         launchAvailable: false,
@@ -385,11 +388,17 @@
         if (options.body) headers.set("Content-Type", "application/json");
         let response;
         try {
-          response = await fetch(path, { ...options, headers });
-        } catch {
+          response = await fetch(path, {
+            ...options,
+            headers,
+            signal: options.signal || AbortSignal.timeout(15000)
+          });
+        } catch (error) {
+          if (error.name === "TimeoutError") throw new Error("The Manager API request timed out.");
+          if (error.name === "AbortError") throw error;
           throw new Error("Could not reach the Manager API. Check that the service is running.");
         }
-        if (response.status === 401) {
+        if (response.status === 401 && state.token) {
           signOut();
           throw new Error("Your admin token was rejected. Please sign in again.");
         }
@@ -397,14 +406,16 @@
           let message = `Request failed (${response.status}).`;
           try {
             const payload = await response.json();
-            message = typeof payload.detail === "string"
-              ? payload.detail
-              : JSON.stringify(payload.detail || payload);
-          } catch { /* Keep the status message when an error has no JSON body. */ }
+            message = typeof payload.detail === "string" ? payload.detail : JSON.stringify(payload.detail || payload);
+          } catch { /* Keep the status message when no JSON error body is provided. */ }
           throw new Error(message);
         }
-        if (response.status === 204) return null;
-        return response.json();
+        if (response.status === 204 || response.status === 205) return null;
+        try {
+          return await response.json();
+        } catch {
+          throw new Error("The Manager API returned an invalid JSON response.");
+        }
       }
 
       function showLogin(message = "") {
@@ -418,21 +429,22 @@
         sessionStorage.removeItem(TOKEN_KEY);
         $("#admin-token").value = "";
         $("#logout-button").classList.add("hidden");
-        showLogin();
+        $("#login-backdrop").classList.remove("hidden");
+        $("#last-updated").textContent = "Signed out";
       }
 
       async function signIn(token) {
         $("#login-submit").disabled = true;
         $("#login-error").textContent = "";
         try {
-          const headers = { Authorization: `Bearer ${token}` };
-          const response = await fetch("/api/v1/admin/overview", { headers });
+          const response = await fetch("/api/v1/admin/overview", {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: AbortSignal.timeout(15000)
+          });
           if (!response.ok) {
             if (response.status === 401) throw new Error("That admin token was not accepted.");
             const body = await response.json().catch(() => ({}));
-            const detail = typeof body.detail === "string"
-              ? body.detail
-              : JSON.stringify(body.detail || body);
+            const detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail || body);
             throw new Error(detail || `Manager returned ${response.status}.`);
           }
           state.token = token;
@@ -442,7 +454,9 @@
           $("#logout-button").classList.remove("hidden");
           await refreshAll();
         } catch (error) {
-          $("#login-error").textContent = error.message;
+          $("#login-error").textContent = error.name === "TimeoutError"
+            ? "The Manager API took too long to respond."
+            : error.message;
         } finally {
           $("#login-submit").disabled = false;
         }
@@ -455,7 +469,7 @@
 
       async function updateHealth() {
         try {
-          const response = await fetch("/status");
+          const response = await fetch("/status", { signal: AbortSignal.timeout(7000) });
           const payload = await response.json();
           const data = response.ok ? payload : payload.detail || {};
           setConnection("api", data.database === "ok");
@@ -468,14 +482,14 @@
 
       function playerRows(players, showActions = true) {
         if (!players.length) {
-          return `<tr><td colspan="${showActions ? 5 : 4}" class="table-empty">No players found.</td></tr>`;
+          return `<tr><td colspan="${showActions ? 5 : 3}" class="table-empty">No players found. New player records will appear here.</td></tr>`;
         }
         return players.map(player => {
           const username = escapeHtml(player.username);
           const userId = escapeHtml(player.user_id);
           const server = player.which_server
             ? `<span class="identity-id">${escapeHtml(player.which_server)}</span>`
-            : `<span class="identity-id">—</span>`;
+            : `<span class="identity-id">Not assigned</span>`;
           const moderation = player.is_banned
             ? `<span class="badge banned">Banned</span>`
             : `<span class="badge active">Clear</span>`;
@@ -486,55 +500,55 @@
             ? `<td><div class="row-actions">
                 <button class="button small" data-action="edit-player" data-id="${userId}" data-name="${username}">Edit</button>
                 ${player.is_banned
-                  ? `<button class="button small" data-action="unban-player" data-id="${userId}">Unban</button>`
+                  ? `<button class="button small" data-action="unban-player" data-id="${userId}" data-name="${username}">Unban</button>`
                   : `<button class="button small" data-action="ban-player" data-id="${userId}" data-name="${username}">Ban</button>`}
                 <button class="button small danger" data-action="delete-player" data-id="${userId}" data-name="${username}" ${player.is_online ? "disabled title=\"Player must be offline to delete\"" : ""}>Delete</button>
               </div></td>`
             : "";
           return `<tr>
-            <td><div class="identity"><div class="identity-avatar">${escapeHtml(username.slice(0, 1).toUpperCase())}</div><div><div class="identity-name">${username}</div><div class="identity-id">${userId}</div></div></div></td>
-            <td>${presence}</td><td>${moderation}</td><td>${server}</td>${actions}
+            <td><div class="identity"><div class="identity-avatar">${escapeHtml((player.username || "?").slice(0, 1).toUpperCase())}</div><div><div class="identity-name">${username}</div><div class="identity-id">${userId}</div></div></div></td>
+            <td>${presence}</td><td>${moderation}</td>${showActions ? `<td>${server}</td>` : ""}${actions}
           </tr>`;
         }).join("");
       }
 
       function serverCard(server) {
-        const capacity = Number(server.server_max_players) || 1;
-        const online = Number(server.online_players) || 0;
+        const capacity = Math.max(1, Number(server.server_max_players) || 1);
+        const online = Math.max(0, Number(server.online_players) || 0);
         const fill = Math.min(100, Math.round((online / capacity) * 100));
         const heartbeatBadge = server.is_online
-          ? `<span class="badge online">Online</span>`
-          : `<span class="badge offline">Offline</span>`;
+          ? `<span class="badge online">Heartbeat online</span>`
+          : `<span class="badge offline">Heartbeat offline</span>`;
         const process = server.process || {};
         const processStatus = process.status || "not_started";
         const processLabels = {
-          not_started: "Not started",
-          starting: "Starting",
-          running: "Running",
-          stopping: "Stopping",
-          stopped: "Stopped",
-          failed: "Exited with error"
+          not_started: "Not started", starting: "Starting", running: "Running",
+          stopping: "Stopping", stopped: "Stopped", failed: "Failed"
         };
         const processIsActive = ["starting", "running", "stopping"].includes(processStatus);
         const processBadgeClass = ["starting", "running", "stopping", "failed"].includes(processStatus)
-          ? `process-${processStatus}`
-          : "offline";
+          ? `process-${processStatus}` : "offline";
         const processBadge = `<span class="badge ${processBadgeClass}">Process: ${processLabels[processStatus] || "Unknown"}</span>`;
         const processMeta = process.pid
-          ? `<div class="process-meta">Process ID ${escapeHtml(process.pid)}${process.exit_code !== null && process.exit_code !== undefined ? ` · exit ${escapeHtml(process.exit_code)}` : ""}</div>`
+          ? `<div class="process-meta">PID ${escapeHtml(process.pid)}${process.exit_code !== null && process.exit_code !== undefined ? ` · exit code ${escapeHtml(process.exit_code)}` : ""}</div>`
           : "";
+        const engineName = server.server_engine === "unity" ? "Unity" : "Unreal";
+        const executableSetting = server.server_engine === "unity"
+          ? "VEILNET_MANAGER_UNITY_SERVER_EXECUTABLE"
+          : "VEILNET_MANAGER_UNREAL_SERVER_EXECUTABLE";
+        const launchAvailable = server.launch_available ?? state.launchAvailable;
         return `<article class="server-card">
-          <div class="server-card-top"><div><h3>${escapeHtml(server.server_name)}</h3><div class="server-id">${escapeHtml(server.server_id)}</div></div><div class="server-status">${heartbeatBadge}${processBadge}</div></div>
+          <div class="server-card-top"><div><h3>${escapeHtml(server.server_name)}</h3><div class="server-id">${escapeHtml(server.server_id)} · ${engineName}</div></div><div class="server-status">${heartbeatBadge}${processBadge}</div></div>
           <div class="server-address">${escapeHtml(server.server_ip)}:${escapeHtml(server.server_port)}</div>
           ${processMeta}
-          <div class="server-capacity">${online} / ${capacity} players</div>
-          <div class="capacity-track" aria-label="${online} of ${capacity} players"><div class="capacity-fill" style="width:${fill}%"></div></div>
+          <div class="server-capacity"><span>Player capacity</span><strong>${online} / ${capacity}</strong></div>
+          <div class="capacity-track" role="progressbar" aria-label="Player capacity" aria-valuemin="0" aria-valuemax="${capacity}" aria-valuenow="${Math.min(online, capacity)}"><div class="capacity-fill" style="width:${fill}%"></div></div>
           <div class="server-card-actions">
-            <button class="button small primary" data-action="start-server" data-id="${escapeHtml(server.server_id)}" data-name="${escapeHtml(server.server_name)}" ${!state.launchAvailable || processIsActive ? `disabled title="${state.launchAvailable ? "This process is already active" : "Configure VEILNET_MANAGER_SERVER_EXECUTABLE in the Manager .ENV"}"` : ""}>Start</button>
-            <button class="button small danger" data-action="stop-server" data-id="${escapeHtml(server.server_id)}" data-name="${escapeHtml(server.server_name)}" ${!processIsActive ? "disabled title=\"No active process managed by this Manager\"" : ""}>Stop</button>
+            <button class="button small primary" data-action="start-server" data-id="${escapeHtml(server.server_id)}" data-name="${escapeHtml(server.server_name)}" ${!launchAvailable || processIsActive ? `disabled title="${processIsActive ? "This process is already active" : `Configure ${executableSetting} in the Manager environment`}"` : ""}>▶ Start</button>
+            <button class="button small danger" data-action="stop-server" data-id="${escapeHtml(server.server_id)}" data-name="${escapeHtml(server.server_name)}" ${!processIsActive ? "disabled title=\"No active process managed by this Manager\"" : ""}>■ Stop</button>
             <button class="button small" data-action="server-logs" data-id="${escapeHtml(server.server_id)}" data-name="${escapeHtml(server.server_name)}" ${!process.pid ? "disabled title=\"No process output is available\"" : ""}>Output</button>
-            <button class="button small" data-action="edit-server" data-id="${escapeHtml(server.server_id)}">Edit details</button>
-            <button class="button small" data-action="delete-server" data-id="${escapeHtml(server.server_id)}" data-name="${escapeHtml(server.server_name)}" ${processIsActive ? "disabled title=\"Stop the process before removing this server\"" : ""}>Remove</button>
+            <button class="button small" data-action="edit-server" data-id="${escapeHtml(server.server_id)}">Edit</button>
+            <button class="button small danger" data-action="delete-server" data-id="${escapeHtml(server.server_id)}" data-name="${escapeHtml(server.server_name)}" ${processIsActive ? "disabled title=\"Stop the process before removing this server\"" : ""}>Remove</button>
           </div>
         </article>`;
       }
@@ -545,45 +559,53 @@
           request("/api/v1/admin/servers"),
           request("/api/v1/admin/players?limit=5&offset=0")
         ]);
-        $("#metric-players").textContent = overview.players;
-        $("#metric-online").textContent = overview.players_online;
-        $("#metric-servers").textContent = overview.servers;
-        $("#metric-servers-online").textContent = `${overview.servers_online} online`;
-        $("#metric-banned").textContent = overview.players_banned;
-        state.launchAvailable = serverData.launch_available;
-        $("#overview-servers").innerHTML = serverData.items.length
+        $("#metric-players").textContent = overview.players ?? "—";
+        $("#metric-online").textContent = overview.players_online ?? "—";
+        $("#metric-servers").textContent = overview.servers ?? "—";
+        $("#metric-servers-online").textContent = `${overview.servers_online ?? "—"} online`;
+        $("#metric-banned").textContent = overview.players_banned ?? "—";
+        state.launchAvailable = serverData.launch_available_by_engine
+          ? Object.values(serverData.launch_available_by_engine).some(Boolean)
+          : Boolean(serverData.launch_available);
+        $("#overview-servers").innerHTML = serverData.items?.length
           ? serverData.items.slice(0, 4).map(serverCard).join("")
-          : `<div class="table-empty" style="grid-column:1/-1">No servers registered yet. Add one to start monitoring.</div>`;
-        $("#recent-players").innerHTML = playerRows(playerData.items, false);
-        state.servers = serverData.items;
+          : `<div class="table-empty" style="grid-column:1/-1">No servers registered yet. Add a server to begin monitoring.</div>`;
+        $("#recent-players").innerHTML = playerRows(playerData.items || [], false);
+        state.servers = serverData.items || [];
       }
 
       async function loadPlayers() {
+        const requestId = ++state.playerRequestId;
         const params = new URLSearchParams({
           limit: String(PAGE_SIZE),
           offset: String(state.playerPage * PAGE_SIZE)
         });
         if (state.playerSearch) params.set("search", state.playerSearch);
         const data = await request(`/api/v1/admin/players?${params}`);
-        state.players = data.items;
-        $("#players-body").innerHTML = playerRows(data.items);
+        if (requestId !== state.playerRequestId) return;
+        const items = data.items || [];
+        const total = Number(data.total) || 0;
+        state.players = items;
+        $("#players-body").innerHTML = playerRows(items);
         $("#player-count").textContent = state.playerSearch
-          ? `${data.total} matching ${data.total === 1 ? "player" : "players"}`
-          : `${data.total} registered ${data.total === 1 ? "player" : "players"}`;
-        const start = data.total === 0 ? 0 : state.playerPage * PAGE_SIZE + 1;
-        const end = Math.min((state.playerPage + 1) * PAGE_SIZE, data.total);
-        $("#pagination-label").textContent = `${start}–${end} of ${data.total}`;
+          ? `${total} matching ${total === 1 ? "player" : "players"}`
+          : `${total} registered ${total === 1 ? "player" : "players"}`;
+        const start = total === 0 ? 0 : state.playerPage * PAGE_SIZE + 1;
+        const end = Math.min((state.playerPage + 1) * PAGE_SIZE, total);
+        $("#pagination-label").textContent = `${start}–${end} of ${total}`;
         $("#previous-page").disabled = state.playerPage === 0;
-        $("#next-page").disabled = end >= data.total;
+        $("#next-page").disabled = end >= total;
       }
 
       async function loadServers() {
         const data = await request("/api/v1/admin/servers");
-        state.servers = data.items;
-        state.launchAvailable = data.launch_available;
+        state.servers = data.items || [];
+        state.launchAvailable = data.launch_available_by_engine
+          ? Object.values(data.launch_available_by_engine).some(Boolean)
+          : Boolean(data.launch_available);
         $("#launch-notice").classList.toggle("hidden", state.launchAvailable);
-        $("#servers-grid").innerHTML = data.items.length
-          ? data.items.map(serverCard).join("")
+        $("#servers-grid").innerHTML = state.servers.length
+          ? state.servers.map(serverCard).join("")
           : `<div class="panel table-empty" style="grid-column:1/-1">No servers registered. Use “Add server” to register one.</div>`;
       }
 
@@ -596,6 +618,7 @@
           if (state.view === "players") tasks.push(loadPlayers());
           if (state.view === "servers") tasks.push(loadServers());
           await Promise.all(tasks);
+          $("#last-updated").textContent = `Updated ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
         } catch (error) {
           notify(error.message, true);
         } finally {
@@ -604,6 +627,7 @@
       }
 
       function switchView(view) {
+        if (!["overview", "players", "servers"].includes(view)) return;
         state.view = view;
         $$(".view").forEach(section => section.classList.toggle("hidden", section.id !== `${view}-view`));
         $$(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === view));
@@ -614,21 +638,20 @@
       function closeModal() {
         $("#modal-backdrop").classList.add("hidden");
         $("#modal-form").replaceChildren();
+        $("#modal-form").onsubmit = null;
       }
 
       async function openServerLogs(serverId, serverName) {
-        $("#modal-title").textContent = `${serverName} process output`;
+        $("#modal-title").textContent = `${serverName} · process output`;
         $("#modal-description").textContent = "Most recent output captured by this Manager instance.";
-        $("#modal-form").innerHTML = `<pre class="log-output">Loading output…</pre><div class="form-actions"><button class="button" type="button" data-action="close-modal">Close</button></div>`;
+        $("#modal-form").innerHTML = `<pre class="log-output">Loading output…</pre><div class="form-actions"><button class="button" type="button" data-action="close-modal">Close</button><button class="button" type="button" data-action="server-logs" data-id="${escapeHtml(serverId)}" data-name="${escapeHtml(serverName)}">Refresh output</button></div>`;
         $("#modal-form").onsubmit = event => event.preventDefault();
         $("#modal-backdrop").classList.remove("hidden");
         const output = $(".log-output");
         try {
           const data = await request(`/api/v1/admin/servers/${encodeURIComponent(serverId)}/logs`);
           if (!output.isConnected) return;
-          output.textContent = data.items.length
-            ? data.items.join("\n")
-            : "The process has not written any output.";
+          output.textContent = data.items?.length ? data.items.join("\n") : "The process has not written any output.";
         } catch (error) {
           if (output.isConnected) output.textContent = error.message;
         }
@@ -640,13 +663,17 @@
         $("#modal-form").innerHTML = fields.map(field => `
           <div class="field">
             <label for="form-${escapeHtml(field.name)}">${escapeHtml(field.label)}</label>
-            <input id="form-${escapeHtml(field.name)}" name="${escapeHtml(field.name)}" type="${field.type || "text"}"
+            ${field.options
+              ? `<select id="form-${escapeHtml(field.name)}" name="${escapeHtml(field.name)}" ${field.required ? "required" : ""}>
+                  ${field.options.map(option => `<option value="${escapeHtml(option.value)}" ${String(field.value ?? "") === String(option.value) ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
+                </select>`
+              : `<input id="form-${escapeHtml(field.name)}" name="${escapeHtml(field.name)}" type="${field.type || "text"}"
               value="${escapeHtml(field.value ?? "")}" ${field.required ? "required" : ""}
               ${field.min !== undefined ? `min="${escapeHtml(field.min)}"` : ""}
               ${field.max !== undefined ? `max="${escapeHtml(field.max)}"` : ""}
               ${field.maxLength ? `maxlength="${escapeHtml(field.maxLength)}"` : ""}
               ${field.minLength ? `minlength="${escapeHtml(field.minLength)}"` : ""}
-              ${field.placeholder ? `placeholder="${escapeHtml(field.placeholder)}"` : ""}>
+              ${field.placeholder ? `placeholder="${escapeHtml(field.placeholder)}"` : ""}>`}
             ${field.help ? `<span class="field-help">${escapeHtml(field.help)}</span>` : ""}
           </div>`).join("") + `
           <div class="form-error" id="modal-error" role="alert"></div>
@@ -665,11 +692,11 @@
           } catch (error) {
             $("#modal-error").textContent = error.message;
           } finally {
-            submit.disabled = false;
+            if (submit.isConnected) submit.disabled = false;
           }
         };
         $("#modal-backdrop").classList.remove("hidden");
-        const firstInput = $("input", $("#modal-form"));
+        const firstInput = $("input, select", $("#modal-form"));
         if (firstInput) firstInput.focus();
       }
 
@@ -679,7 +706,7 @@
           title: isEdit ? "Edit player" : "Add player",
           description: isEdit ? `Update ${player.username}'s profile.` : "Create a player record in the Manager.",
           fields: [
-            ...(isEdit ? [] : [{ name: "user_id", label: "Player ID", required: true, maxLength: 50, placeholder: "Unique trusted player ID" }]),
+            ...(!isEdit ? [{ name: "user_id", label: "Player ID", required: true, maxLength: 50, placeholder: "Unique trusted player ID" }] : []),
             { name: "username", label: "Username", required: true, minLength: 3, maxLength: 20, value: player?.username || "" }
           ],
           submitLabel: isEdit ? "Save changes" : "Create player",
@@ -687,7 +714,7 @@
             const id = encodeURIComponent(player?.user_id || values.user_id);
             await request(isEdit ? `/api/v1/admin/players/${id}` : "/api/v1/admin/players", {
               method: isEdit ? "PATCH" : "POST",
-              body: JSON.stringify(isEdit ? { username: values.username } : values)
+              body: JSON.stringify(isEdit ? { username: values.username } : { user_id: values.user_id, username: values.username })
             });
           }
         });
@@ -696,12 +723,11 @@
       function openBanForm(playerId, username) {
         openForm({
           title: `Ban ${username}`,
-          description: "This records the ban and clears Manager presence. It does not itself disconnect a game client.",
+          description: "This records the ban and clears Manager presence. Your game server must enforce the ban and disconnect the player.",
           fields: [{ name: "reason", label: "Ban reason", required: true, maxLength: 500, minLength: 1, placeholder: "Reason visible to moderators" }],
           submitLabel: "Confirm ban",
           onSubmit: values => request(`/api/v1/admin/players/${encodeURIComponent(playerId)}/ban`, {
-            method: "POST",
-            body: JSON.stringify({ reason: values.reason })
+            method: "POST", body: JSON.stringify({ reason: values.reason })
           })
         });
       }
@@ -710,25 +736,21 @@
         const isEdit = Boolean(server);
         openForm({
           title: isEdit ? "Edit server" : "Add server",
-          description: isEdit ? "Update the registered endpoint and player capacity." : "Register a game server to monitor its heartbeat and population.",
+          description: isEdit ? "Update this server's endpoint, engine, and capacity." : "Register a Unity or Unreal server for heartbeat and population monitoring.",
           fields: [
             ...(!isEdit ? [{ name: "server_id", label: "Server ID", required: true, maxLength: 50, placeholder: "Unique server identifier" }] : []),
             { name: "server_name", label: "Server name", required: true, minLength: 3, maxLength: 50, value: server?.server_name || "" },
+            { name: "server_engine", label: "Server engine", options: [{ value: "unreal", label: "Unreal Engine" }, { value: "unity", label: "Unity" }], value: server?.server_engine || "unreal", help: "Select the configured dedicated-server build this Manager should start." },
             { name: "server_ip", label: "Host / IP address", required: true, maxLength: 253, value: server?.server_ip || "", placeholder: "127.0.0.1 or game.example.com" },
             { name: "server_port", label: "Port", type: "number", required: true, min: 1, max: 65535, value: server?.server_port ?? 7777 },
             { name: "server_max_players", label: "Player capacity", type: "number", required: true, min: 1, max: 10000, value: server?.server_max_players ?? 100 }
           ],
           submitLabel: isEdit ? "Save changes" : "Register server",
           onSubmit: async values => {
-            const payload = {
-              ...values,
-              server_port: Number(values.server_port),
-              server_max_players: Number(values.server_max_players)
-            };
+            const payload = { ...values, server_port: Number(values.server_port), server_max_players: Number(values.server_max_players) };
             const id = encodeURIComponent(server?.server_id || values.server_id);
             await request(isEdit ? `/api/v1/admin/servers/${id}` : "/api/v1/admin/servers", {
-              method: isEdit ? "PATCH" : "POST",
-              body: JSON.stringify(payload)
+              method: isEdit ? "PATCH" : "POST", body: JSON.stringify(payload)
             });
           }
         });
@@ -747,6 +769,7 @@
         }
         if (action === "ban-player") return openBanForm(id, name);
         if (action === "unban-player") {
+          if (!window.confirm(`Remove the ban for “${name}”?`)) return;
           await request(`/api/v1/admin/players/${encodeURIComponent(id)}/ban`, { method: "DELETE" });
           notify(`${name} was unbanned.`);
           return refreshAll();
@@ -769,13 +792,13 @@
           return refreshAll();
         }
         if (action === "stop-server") {
-          if (!window.confirm(`Stop the managed process for “${name}”? Players connected to it may be disconnected.`)) return;
+          if (!window.confirm(`Stop the managed process for “${name}”? Connected players may be disconnected.`)) return;
           await request(`/api/v1/admin/servers/${encodeURIComponent(id)}/stop`, { method: "POST" });
-          notify(`${name} stopped.`);
+          notify(`Stop requested for ${name}.`);
           return refreshAll();
         }
         if (action === "server-logs") return openServerLogs(id, name);
-        if (action === "close-modal") closeModal();
+        if (action === "close-modal") return closeModal();
       }
 
       $("#login-form").addEventListener("submit", event => {
@@ -787,6 +810,9 @@
       $("#modal-close").addEventListener("click", closeModal);
       $("#modal-backdrop").addEventListener("click", event => {
         if (event.target === $("#modal-backdrop")) closeModal();
+      });
+      $("#login-backdrop").addEventListener("click", event => {
+        if (event.target === $("#login-backdrop")) event.preventDefault();
       });
       $("#login-backdrop").addEventListener("keydown", event => {
         if (event.key === "Escape") event.preventDefault();
@@ -832,9 +858,7 @@
 
       if (state.token) {
         $("#logout-button").classList.remove("hidden");
-        refreshAll().catch(error => {
-          if (state.token) showLogin(error.message);
-        });
+        refreshAll().catch(error => showLogin(error.message));
       } else {
         $("#logout-button").classList.add("hidden");
         showLogin();

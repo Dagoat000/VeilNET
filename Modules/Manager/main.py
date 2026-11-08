@@ -1,4 +1,6 @@
 import asyncio
+import hashlib
+import hmac
 import logging
 import os
 import secrets
@@ -10,7 +12,7 @@ from collections.abc import Generator
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 import sys
 import redis
 from dotenv import load_dotenv
@@ -46,10 +48,25 @@ DATABASE_PATH = Path(
 )
 PRESENCE_TTL_SECONDS = 90
 MANAGED_SERVER_LIMIT = 4
-DEFAULT_SERVER_MAP = os.environ.get(
-    "VEILNET_MANAGER_SERVER_MAP",
-    "/Game/Maps/Lobby",
+DEVICE_IDENTITY_KEY_ENV_VAR = "VEILNET_MANAGER_IDENTITY_KEY"
+MANAGER_GAME_API_URL = os.environ.get(
+    "VEILNET_MANAGER_GAME_API_URL",
+    "http://127.0.0.1:8000",
+).strip() or "http://127.0.0.1:8000"
+ServerEngine = Literal["unreal", "unity"]
+SERVER_ENGINES: tuple[ServerEngine, ...] = ("unreal", "unity")
+DEFAULT_UNREAL_SERVER_MAP = os.environ.get(
+    "VEILNET_MANAGER_UNREAL_SERVER_MAP",
+    os.environ.get(
+        "VEILNET_MANAGER_SERVER_MAP",
+        "/Game/Maps/Lobby",
+    ),
 )
+SERVER_EXECUTABLE_ENV_VARS: dict[ServerEngine, str] = {
+    "unreal": "VEILNET_MANAGER_UNREAL_SERVER_EXECUTABLE",
+    "unity": "VEILNET_MANAGER_UNITY_SERVER_EXECUTABLE",
+}
+LEGACY_UNREAL_SERVER_EXECUTABLE_ENV_VAR = "VEILNET_MANAGER_SERVER_EXECUTABLE"
 redis_client = redis.Redis.from_url(
     os.environ.get("VEILNET_MANAGER_REDIS_URL", "redis://localhost:6379/0"),
     decode_responses=True,
@@ -74,17 +91,32 @@ class ManagedServerProcess:
     stop_requested: bool = False
 
 
-def configured_server_executable() -> Path | None:
-    configured_path = os.environ.get("VEILNET_MANAGER_SERVER_EXECUTABLE", "").strip()
+def configured_server_executable(engine: ServerEngine) -> Path | None:
+    configured_path = os.environ.get(
+        SERVER_EXECUTABLE_ENV_VARS[engine],
+        "",
+    ).strip()
+    if engine == "unreal" and not configured_path:
+        configured_path = os.environ.get(
+            LEGACY_UNREAL_SERVER_EXECUTABLE_ENV_VAR,
+            "",
+        ).strip()
     return Path(configured_path).expanduser() if configured_path else None
 
 
-def server_executable_available() -> bool:
-    executable = configured_server_executable()
+def server_executable_available(engine: ServerEngine) -> bool:
+    executable = configured_server_executable(engine)
     try:
         return executable is not None and executable.is_file()
     except (OSError, ValueError):
         return False
+
+
+def launch_availability_by_engine() -> dict[ServerEngine, bool]:
+    return {
+        engine: server_executable_available(engine)
+        for engine in SERVER_ENGINES
+    }
 
 
 def managed_process_response(server_id: str) -> dict[str, object]:
@@ -152,6 +184,11 @@ class PlayerUpdate(BaseModel):
     username: str | None = Field(default=None, min_length=3, max_length=20)
 
 
+class PlayerDeviceIdentity(BaseModel):
+    device_fingerprint: str = Field(pattern=r"^[0-9a-fA-F]{64}$")
+    username: str | None = Field(default=None, min_length=3, max_length=20)
+
+
 class BanRequest(BaseModel):
     reason: str = Field(min_length=1, max_length=500)
 
@@ -159,6 +196,7 @@ class BanRequest(BaseModel):
 class ServerCreate(BaseModel):
     server_id: str = Field(min_length=1, max_length=50)
     server_name: str = Field(min_length=3, max_length=50)
+    server_engine: ServerEngine = "unreal"
     server_max_players: int = Field(default=100, ge=1, le=10000)
     server_ip: str = Field(min_length=1, max_length=253)
     server_port: int = Field(default=7777, ge=1, le=65535)
@@ -166,6 +204,7 @@ class ServerCreate(BaseModel):
 
 class ServerUpdate(BaseModel):
     server_name: str | None = Field(default=None, min_length=3, max_length=50)
+    server_engine: ServerEngine | None = None
     server_max_players: int | None = Field(default=None, ge=1, le=10000)
     server_ip: str | None = Field(default=None, min_length=1, max_length=253)
     server_port: int | None = Field(default=None, ge=1, le=65535)
@@ -198,6 +237,8 @@ def initialize_database() -> None:
                 server_max_players INTEGER NOT NULL CHECK (server_max_players > 0),
                 server_ip TEXT NOT NULL,
                 server_port INTEGER NOT NULL CHECK (server_port BETWEEN 1 AND 65535),
+                server_engine TEXT NOT NULL DEFAULT 'unreal'
+                    CHECK (server_engine IN ('unreal', 'unity')),
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL
             );
@@ -217,6 +258,18 @@ def initialize_database() -> None:
                 ON players(which_server);
             """
         )
+        server_columns = {
+            column["name"]
+            for column in connection.execute("PRAGMA table_info(servers)")
+        }
+        if "server_engine" not in server_columns:
+            connection.execute(
+                """
+                ALTER TABLE servers
+                ADD COLUMN server_engine TEXT NOT NULL DEFAULT 'unreal'
+                    CHECK (server_engine IN ('unreal', 'unity'))
+                """
+            )
 
 
 @asynccontextmanager
@@ -353,9 +406,11 @@ def server_response(
     return {
         "server_id": server["server_id"],
         "server_name": server["server_name"],
+        "server_engine": server["server_engine"],
         "server_max_players": server["server_max_players"],
         "server_ip": server["server_ip"],
         "server_port": server["server_port"],
+        "launch_available": server_executable_available(server["server_engine"]),
         "is_online": online,
         "online_players": online_count,
         "process": managed_process_response(server["server_id"]),
@@ -627,7 +682,6 @@ def update_player(user_id: str, body: PlayerUpdate) -> dict[str, object]:
     if changes.get("username") is None:
         raise HTTPException(status_code=400, detail="username cannot be null.")
     with database() as connection:
-        player = get_required_player(connection, user_id)
         connection.execute(
             "UPDATE players SET username = ?, updated_at = ? WHERE user_id = ?",
             (changes["username"], int(time.time()), user_id),
@@ -733,8 +787,8 @@ def create_server(body: ServerCreate) -> dict[str, object]:
                 """
                 INSERT INTO servers (
                     server_id, server_name, server_max_players, server_ip,
-                    server_port, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    server_port, server_engine, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     body.server_id,
@@ -742,6 +796,7 @@ def create_server(body: ServerCreate) -> dict[str, object]:
                     body.server_max_players,
                     body.server_ip,
                     body.server_port,
+                    body.server_engine,
                     now,
                     now,
                 ),
@@ -796,6 +851,7 @@ def list_servers() -> dict[str, object]:
     for player, player_presence in zip(assigned_players, presence):
         server_id = player["which_server"]
         presence_by_server.setdefault(server_id, []).append(player_presence)
+    launch_availability = launch_availability_by_engine()
     return {
         "items": [
             server_response(
@@ -806,7 +862,8 @@ def list_servers() -> dict[str, object]:
             for server, heartbeat in zip(servers, heartbeats)
         ],
         "total": len(servers),
-        "launch_available": server_executable_available(),
+        "launch_available": launch_availability["unreal"],
+        "launch_available_by_engine": launch_availability,
     }
 
 
@@ -817,12 +874,14 @@ async def list_managed_processes() -> dict[str, object]:
             {"server_id": server_id, **managed_process_response(server_id)}
             for server_id in managed_processes
         ]
+    launch_availability = launch_availability_by_engine()
     return {
         "items": items,
         "running": sum(item["status"] in {"starting", "running", "stopping"} for item in items),
         "limit": MANAGED_SERVER_LIMIT,
-        "launch_available": server_executable_available(),
-        "map": DEFAULT_SERVER_MAP,
+        "launch_available": launch_availability["unreal"],
+        "launch_available_by_engine": launch_availability,
+        "map": DEFAULT_UNREAL_SERVER_MAP,
     }
 
 
@@ -832,14 +891,19 @@ async def list_managed_processes() -> dict[str, object]:
     dependencies=[Depends(require_admin)],
 )
 async def start_server_process(server_id: str) -> dict[str, object]:
-    executable_path = configured_server_executable()
+    with database() as connection:
+        server = get_required_server(connection, server_id)
+        server_engine: ServerEngine = server["server_engine"]
+        server_port = server["server_port"]
+
+    executable_path = configured_server_executable(server_engine)
     if executable_path is None:
         raise HTTPException(
             status_code=503,
             detail=(
-                "Dedicated server executable is not configured. Set "
-                "VEILNET_MANAGER_SERVER_EXECUTABLE in the Manager .ENV after "
-                "packaging the Unreal server."
+                f"{server_engine.title()} dedicated server executable is not "
+                f"configured. Set {SERVER_EXECUTABLE_ENV_VARS[server_engine]} "
+                "in the Manager .ENV."
             ),
         )
     try:
@@ -855,18 +919,37 @@ async def start_server_process(server_id: str) -> dict[str, object]:
             status_code=503,
             detail="Configured dedicated server executable is not a file.",
         )
-    if not DEFAULT_SERVER_MAP.startswith("/") or any(
-        character in DEFAULT_SERVER_MAP for character in ("\0", "\r", "\n")
-    ):
-        raise HTTPException(
-            status_code=503,
-            detail="VEILNET_MANAGER_SERVER_MAP must be an Unreal map path beginning with '/'.",
-        )
+    if server_engine == "unreal":
+        if not DEFAULT_UNREAL_SERVER_MAP.startswith("/") or any(
+            character in DEFAULT_UNREAL_SERVER_MAP
+            for character in ("\0", "\r", "\n")
+        ):
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "VEILNET_MANAGER_UNREAL_SERVER_MAP must be an Unreal map "
+                    "path beginning with '/'."
+                ),
+            )
+        launch_arguments = [
+            DEFAULT_UNREAL_SERVER_MAP,
+            f"-Port={server_port}",
+            "-log",
+        ]
+    else:
+        launch_arguments = []
 
     async with process_lock:
         with database() as connection:
             server = get_required_server(connection, server_id)
-            server_port = server["server_port"]
+            if (
+                server["server_engine"] != server_engine
+                or server["server_port"] != server_port
+            ):
+                raise HTTPException(
+                    status_code=409,
+                    detail="The server configuration changed during launch. Try again.",
+                )
         existing = managed_processes.get(server_id)
         if existing is not None and existing.process.returncode is None:
             raise HTTPException(
@@ -891,13 +974,21 @@ async def start_server_process(server_id: str) -> dict[str, object]:
         try:
             process = await asyncio.create_subprocess_exec(
                 str(executable),
-                DEFAULT_SERVER_MAP,
-                f"-Port={server_port}",
-                "-log",
+                *launch_arguments,
                 stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 cwd=executable.parent,
+                env=(
+                    {
+                        **os.environ,
+                        "VEILNET_SERVER_ID": server_id,
+                        "VEILNET_SERVER_PORT": str(server_port),
+                        "VEILNET_MANAGER_URL": MANAGER_GAME_API_URL,
+                    }
+                    if server_engine == "unity"
+                    else None
+                ),
             )
         except OSError as error:
             logger.exception("Unable to launch dedicated server %s", server_id)
@@ -910,6 +1001,7 @@ async def start_server_process(server_id: str) -> dict[str, object]:
             server_port=server_port,
             process=process,
             started_at=int(time.time()),
+            status="running",
         )
         managed_processes[server_id] = record
         record.monitor_task = asyncio.create_task(monitor_server_process(record))
@@ -987,8 +1079,18 @@ async def update_server(server_id: str, body: ServerUpdate) -> dict[str, object]
     values = [*changes.values(), int(time.time()), server_id]
     async with process_lock:
         with database() as connection:
-            get_required_server(connection, server_id)
+            server = get_required_server(connection, server_id)
             process = managed_processes.get(server_id)
+            if (
+                process is not None
+                and process.process.returncode is None
+                and changes.get("server_engine", server["server_engine"])
+                != server["server_engine"]
+            ):
+                raise HTTPException(
+                    status_code=409,
+                    detail="Stop the managed process before changing its engine.",
+                )
             if (
                 process is not None
                 and process.process.returncode is None
@@ -1039,6 +1141,55 @@ async def delete_server(server_id: str) -> Response:
             status_code=503, detail="Server was deleted, but presence cleanup failed."
         ) from error
     return Response(status_code=204)
+
+
+@app.post(
+    "/api/v1/game/auth/device",
+    dependencies=[Depends(require_game_server)],
+)
+def identify_player_by_device(body: PlayerDeviceIdentity) -> dict[str, str]:
+    identity_key = os.environ.get(DEVICE_IDENTITY_KEY_ENV_VAR, "").strip()
+    if len(identity_key.encode("utf-8")) < 32:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"{DEVICE_IDENTITY_KEY_ENV_VAR} must be configured with at least "
+                "32 bytes of secret material."
+            ),
+        )
+    identity = hmac.new(
+        identity_key.encode("utf-8"),
+        body.device_fingerprint.lower().encode("ascii"),
+        hashlib.sha256,
+    ).hexdigest()
+    user_id = f"hwid_{identity[:45]}"
+    username = body.username or f"Player-{identity[:8]}"
+
+    with database() as connection:
+        now = int(time.time())
+        generated_username = f"Player-{identity[:8]}"
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO players (user_id, username, created_at, updated_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (user_id, username, now, now),
+        )
+        if body.username is not None:
+            connection.execute(
+                """
+                UPDATE players
+                SET username = ?, updated_at = ?
+                WHERE user_id = ? AND username = ?
+                """,
+                (username, now, user_id, generated_username),
+            )
+        player = get_required_player(connection, user_id)
+    if player["is_banned"]:
+        raise HTTPException(
+            status_code=403, detail="This device's player account is banned."
+        )
+    return {"user_id": player["user_id"], "username": player["username"]}
 
 
 @app.post(
